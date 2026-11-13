@@ -5,8 +5,11 @@
 - Done: updater code, signing key outside the workspace, public key pin, signed
   0.1.7 Windows x64 NSIS installer (5.37 MiB) and `.sig`, update UI/notification,
   six-hour scheduler check, public-source/release documentation.
-- In progress: route releases to `DayenM/Daymark`, publish its source and history,
-  then create the first `v0.1.7` release from the same repository.
+- Done: `DayenM/Daymark` is public; source commit `e0bcf85` and tag `v0.1.7`
+  are published. GitHub Actions run `43428984765` completed successfully and
+  published the signed installer, signature, and updater manifest in that repo.
+- Done: the old public `DayenM/Daymark-Releases` README now points to the new
+  release channel (notice commit `f81d33f`).
 - No `LICENSE` exists. Do not add one without the owner's choice.
 - No automated tests, installer launch, or runtime update UI verification have
   been run. A prior build attempt failed on disk space; the later build passed.
@@ -39,7 +42,14 @@
 
 - Locally built output: `Daymark_0.1.7_x64-setup.exe` (5.37 MiB) and matching
   updater signature. Build is not a runtime or update-install test.
-- Verify repo visibility, pushed commit, and release assets after publication.
-- Do not claim toast, install, or sleep/resume behavior works until tested on
-  Windows. The app uses a best-effort Tauri resume event plus the existing
-  blocking scheduler fallback, not a dedicated Windows power broadcast.
+- Verified public visibility, source commit, and non-draft `v0.1.7` release.
+  Assets: `Daymark_0.1.7_x64-setup.exe` (5,674,639 bytes), matching `.sig`
+  (436 bytes), and `latest.json` (1,315 bytes).
+- Verified `latest.json` serves version `0.1.7` with a signed
+  `windows-x86_64-nsis` entry. With the updater's `User-Agent` and
+  `Accept: application/octet-stream` headers, its asset endpoint returned HTTP
+  200 and `application/octet-stream`.
+- No automated tests, installer launch, in-app update/install, notification, or
+  sleep/resume behavior was verified. The app uses a best-effort Tauri resume
+  event plus the existing blocking scheduler fallback, not a dedicated Windows
+  power broadcast.

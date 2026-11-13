@@ -1,6 +1,6 @@
 # Daymark Public Source and Signed Updates
 
-**Status:** Approved; migration in progress
+**Status:** Approved and implemented
 **Date:** 2026-11-13
 
 ## Decision
@@ -75,5 +75,14 @@ Version 0.1.6 predates the updater. Users must manually install the signed
   impact documentation.
 - The signed 0.1.7 installer was built locally (5.37 MiB) with its `.sig`.
   Runtime update/notification behavior has not been verified.
-- Do not create the first public tag until source and workflow changes are
-  pushed and `Daymark` visibility is public; then publish `v0.1.7`.
+- The migration completed on 2026-11-13. Repo `DayenM/Daymark` is public at
+  source commit `e0bcf85`; tag `v0.1.7` is published. GitHub Actions run
+  `43428984765` completed successfully and uploaded the signed NSIS installer,
+  `.sig`, and `latest.json`.
+- The public `DayenM/Daymark-Releases` README points users to the new channel.
+- The published manifest serves `0.1.7` and a signed `windows-x86_64-nsis`
+  entry. Using the Tauri updater's `User-Agent` and
+  `Accept: application/octet-stream` headers, the GitHub asset URL returned
+  HTTP 200 with `application/octet-stream`.
+- Runtime update discovery and installation were not exercised in the app;
+  a successful CI build and asset download do not prove the UI/install flow.
