@@ -65,42 +65,35 @@ menjalankan installer.
 
 Panduan batasan CPU/RAM dan evaluasi performa ada di [docs/performance.md](docs/performance.md).
 
-## Pembaruan aplikasi
+## Source dan pembaruan aplikasi
 
-Source ada di repo privat [Daymark](https://github.com/DayenM/Daymark). Installer,
-signature, dan `latest.json` dipublikasikan di repo publik
-[Daymark-Releases](https://github.com/DayenM/Daymark-Releases); repo publik tidak
-menyimpan source atau data tugas. Daymark 0.1.7 adalah versi pertama dengan
-updater. Pengguna 0.1.6 perlu memasang 0.1.7 sekali secara manual; sesudahnya
-Daymark dapat memberi notifikasi dan memasang update bertanda tangan setelah
-pengguna memilih **Pasang**.
+Source Daymark dan rilis installer bertanda tangan berada di repo publik
+[DayenM/Daymark](https://github.com/DayenM/Daymark). Setiap rilis berisi source,
+installer NSIS, signature, dan `latest.json`; database tugas dan konfigurasi
+lokal tidak diunggah. Repo tidak memiliki hide per file: semua file terlacak dan
+riwayat commit dapat dilihat publik. `.gitignore` mengecualikan database,
+environment lokal, build output, dan private signing key.
 
-### Menyiapkan GitHub Actions
+Daymark 0.1.7 adalah versi pertama dengan updater. Pengguna 0.1.6 perlu memasang
+0.1.7 sekali secara manual; sesudahnya Daymark dapat memberi notifikasi dan
+memasang update bertanda tangan setelah pengguna memilih **Pasang**.
 
-Tambahkan secret berikut pada repo privat **Settings → Secrets and variables →
-Actions**:
+### GitHub Actions dan signing
 
-- `TAURI_SIGNING_PRIVATE_KEY`: disiapkan untuk repo ini. File kunci lokal ada di
-  `%LOCALAPPDATA%\Daymark\signing\daymark-updater.key`; jangan commit atau bagikan
-  file itu. Jika kunci dibuat ulang dengan password, tambahkan juga
-  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
-- `DAYMARK_RELEASES_TOKEN`: buat fine-grained personal access token yang hanya
-  diberi akses ke repo `Daymark-Releases` dengan **Contents: Read and write**.
-  Simpan nilainya sebagai Actions secret; jangan menaruh token di source atau
-  mengirimkannya lewat chat.
+Private signing key disimpan sebagai secret `TAURI_SIGNING_PRIVATE_KEY` di
+**Settings → Secrets and variables → Actions**. File lokalnya berada di
+`%LOCALAPPDATA%\Daymark\signing\daymark-updater.key`; jangan commit atau bagikan
+file itu. Jika key dibuat dengan password, tambahkan secret
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Token lintas-repo tidak diperlukan karena
+workflow menerbitkan release ke repo yang sama menggunakan `GITHUB_TOKEN`.
 
-### Menerbitkan versi berikutnya
+Push tag versi `vX.Y.Z` yang cocok dengan versi di `package.json`,
+`src-tauri/Cargo.toml`, dan `src-tauri/tauri.conf.json` untuk membangun dan
+menerbitkan NSIS x64, signature, serta updater manifest. Push biasa ke `main`
+tidak menerbitkan installer.
 
-Ubah versi di `package.json`, `src-tauri/Cargo.toml`, dan
-`src-tauri/tauri.conf.json` agar sama, commit dan push ke `main`, lalu buat tag
-yang cocok, misalnya:
-
-```powershell
-git tag v0.1.8
-git push origin v0.1.8
-```
-
-Workflow `.github/workflows/release.yml` membangun installer NSIS x64 dan
-mengirim installer, signature, serta manifest ke repo publik. Tag tidak akan
-diterbitkan jika tidak cocok dengan versi Tauri. Pemeriksaan update hanya
-mengambil metadata/installer; database dan tugas lokal tidak pernah diunggah.
+Kontributor publik dapat mengusulkan perubahan melalui pull request. Beri akses
+write hanya kepada orang tepercaya: akses itu juga dapat menjalankan release
+workflow dengan signing key. Pemilik repo sebaiknya meninjau dan menerbitkan tag
+rilis sendiri. Repo ini belum memiliki file `LICENSE`; publikasi tidak otomatis
+memberi lisensi bebas pakai di luar kemampuan view/fork GitHub.
