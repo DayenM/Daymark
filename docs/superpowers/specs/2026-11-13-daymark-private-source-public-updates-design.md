@@ -75,11 +75,18 @@ Version 0.1.6 predates the updater. Users must manually install the signed
   impact documentation.
 - The signed 0.1.7 installer was built locally (5.37 MiB) with its `.sig`.
   Runtime update/notification behavior has not been verified.
-- The migration completed on 2026-11-13. Repo `DayenM/Daymark` is public at
-  source commit `e0bcf85`; tag `v0.1.7` is published. GitHub Actions run
-  `43428984765` completed successfully and uploaded the signed NSIS installer,
+- The migration completed on 2026-11-13. Repo `DayenM/Daymark` is public and
+  tag `v0.1.7` points to rewritten commit `5b614ad`. GitHub Actions run
+  `43433617910` completed successfully and uploaded the signed NSIS installer,
   `.sig`, and `latest.json`.
+- The six published commits and the annotated release tag were rewritten to
+  author/committer `DayenM <dayengarena@gmail.com>`; the commit tree stayed
+  identical. GitHub's Contributors graph and stats API show only DayenM. The
+  direct contributors REST endpoint was still returning cached pre-rewrite
+  data during verification.
 - The public `DayenM/Daymark-Releases` README points users to the new channel.
+- Existing clones made before the author rewrite need to be re-cloned or reset
+  to the updated public history.
 - The published manifest serves `0.1.7` and a signed `windows-x86_64-nsis`
   entry. Using the Tauri updater's `User-Agent` and
   `Accept: application/octet-stream` headers, the GitHub asset URL returned

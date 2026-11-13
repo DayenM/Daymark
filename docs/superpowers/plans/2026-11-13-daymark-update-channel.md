@@ -5,11 +5,17 @@
 - Done: updater code, signing key outside the workspace, public key pin, signed
   0.1.7 Windows x64 NSIS installer (5.37 MiB) and `.sig`, update UI/notification,
   six-hour scheduler check, public-source/release documentation.
-- Done: `DayenM/Daymark` is public; source commit `e0bcf85` and tag `v0.1.7`
-  are published. GitHub Actions run `43428984765` completed successfully and
-  published the signed installer, signature, and updater manifest in that repo.
+- Done: `DayenM/Daymark` is public; tag `v0.1.7` points to rewritten commit
+  `5b614ad`. GitHub Actions run `43433617910` completed successfully and
+  published the signed installer, signature, and updater manifest.
+- Done: the six historical commits and release tag now use author/committer
+  identity `DayenM <dayengarena@gmail.com>`; the commit tree was preserved.
+  The GitHub Contributors graph and stats API show only `DayenM`; the direct
+  contributors REST endpoint was still returning cached data during verification.
 - Done: the old public `DayenM/Daymark-Releases` README now points to the new
   release channel (notice commit `f81d33f`).
+- Anyone with a clone from before the author rewrite must re-clone or reset it
+  to the updated public history.
 - No `LICENSE` exists. Do not add one without the owner's choice.
 - No automated tests, installer launch, or runtime update UI verification have
   been run. A prior build attempt failed on disk space; the later build passed.
