@@ -3,6 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { PhysicalPosition } from "@tauri-apps/api/dpi";
 import { getCurrentWindow, LogicalPosition, LogicalSize } from "@tauri-apps/api/window";
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import { dayKey } from "../calendar";
 import type { Project, Task, TaskDraft, Theme, WorkspaceSnapshot } from "../types";
 import { Icon, type IconName } from "./Icon";
@@ -43,6 +46,9 @@ export function TodayWidget() {
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [availableUpdate, setAvailableUpdate] = useState<{ version: string; body: string | null } | null>(null);
+  const [updateBusy, setUpdateBusy] = useState(false);
+  const [updateError, setUpdateError] = useState("");
   const [pinned, setPinned] = useState(true);
   const [positionFrozen, setPositionFrozen] = useState(false);
   const [panelMode, setPanelMode] = useState<PanelMode>("todo");
@@ -68,6 +74,10 @@ export function TodayWidget() {
   const modePickerRef = useRef<HTMLDivElement>(null);
   const modePickerTriggerRef = useRef<HTMLButtonElement>(null);
   const transparencySaveTimer = useRef<number | null>(null);
+  const updateHandle = useRef<Update | null>(null);
+  const updateCheckRunning = useRef(false);
+  const pendingUpdateCheck = useRef(false);
+  const announcedUpdateVersion = useRef<string | null>(null);
   const hidePanelAfterIslandClose = useRef(false);
   const dragOrigin = useRef<{ pointerId: number; startX: number; startY: number; lastX: number; lastY: number; position: { x: number; y: number } | null; scale: number; ended: boolean } | null>(null);
   const resizeOrigin = useRef<{ pointerId: number; startX: number; startY: number; lastX: number; lastY: number; width: number; height: number; minWidth: number; minHeight: number; scale: number; centerX: number; top: number; ready: boolean; ended: boolean; applying: boolean; dirty: boolean } | null>(null);
@@ -82,6 +92,43 @@ export function TodayWidget() {
       setLoading(false);
     }
   }, []);
+
+  const checkForUpdates = useCallback(async (force = false) => {
+    if (previewMode) return;
+    if (updateCheckRunning.current) {
+      if (force) pendingUpdateCheck.current = true;
+      return;
+    }
+    updateCheckRunning.current = true;
+    try {
+      const update = await check({ timeout: 15_000 });
+      if (!update) return;
+      if (announcedUpdateVersion.current === update.version) {
+        await update.close();
+        return;
+      }
+      void updateHandle.current?.close().catch(() => undefined);
+      updateHandle.current = update;
+      announcedUpdateVersion.current = update.version;
+      setAvailableUpdate({ version: update.version, body: update.body ?? null });
+      setUpdateError("");
+      try {
+        let granted = await isPermissionGranted();
+        if (!granted) granted = (await requestPermission()) === "granted";
+        if (granted) sendNotification({ title: "Pembaruan Daymark tersedia", body: `Daymark versi ${update.version} siap dipasang.` });
+      } catch (value) {
+        console.debug("Daymark update toast was unavailable:", value);
+      }
+    } catch (value) {
+      console.debug("Daymark update check failed:", value);
+    } finally {
+      updateCheckRunning.current = false;
+      if (pendingUpdateCheck.current) {
+        pendingUpdateCheck.current = false;
+        void checkForUpdates(true);
+      }
+    }
+  }, [previewMode]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -129,16 +176,20 @@ export function TodayWidget() {
         else void panelWindow?.hide();
       }),
       listen("briefing-needed", () => void changePanelMode("todo")),
+      listen("update-check-requested", () => void checkForUpdates(true)),
     ]).then(stops => {
       if (active) unlisten = stops;
       else stops.forEach(stop => stop());
     });
+    void checkForUpdates();
     return () => {
       active = false;
       unlisten.forEach(stop => stop());
+      void updateHandle.current?.close().catch(() => undefined);
+      updateHandle.current = null;
       delete root.dataset.window;
     };
-  }, [panelWindow, previewMode, refresh]);
+  }, [checkForUpdates, panelWindow, previewMode, refresh]);
 
   useEffect(() => {
     if (!snapshot) return;
@@ -699,6 +750,39 @@ export function TodayWidget() {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }
 
+  function deferUpdate() {
+    setAvailableUpdate(null);
+    setUpdateError("");
+    void updateHandle.current?.close().catch(() => undefined);
+    updateHandle.current = null;
+  }
+
+  async function installUpdate() {
+    if (!updateHandle.current || updateBusy) return;
+    setUpdateBusy(true);
+    setUpdateError("");
+    try {
+      await updateHandle.current.downloadAndInstall();
+      await relaunch();
+    } catch (value) {
+      setUpdateError(`Pembaruan gagal dipasang: ${errorMessage(value)}`);
+      setUpdateBusy(false);
+    }
+  }
+
+  function renderUpdateNotice() {
+    if (!availableUpdate) return null;
+    return <aside className="widget-update-banner" role="status" aria-live="polite">
+      <span className="widget-update-icon"><Icon name="spark" size={14} /></span>
+      <div className="widget-update-copy">
+        <strong>Daymark {availableUpdate.version} tersedia</strong>
+        <span>{updateError || availableUpdate.body || "Pasang pembaruan untuk mendapatkan perbaikan terbaru."}</span>
+      </div>
+      <button className="widget-update-later" onClick={deferUpdate} disabled={updateBusy}>Nanti</button>
+      <button className="widget-update-install" onClick={() => void installUpdate()} disabled={updateBusy}>{updateBusy ? "Mengunduh…" : "Pasang"}</button>
+    </aside>;
+  }
+
   return (
     <div className="today-widget-window">
       <section className={`today-widget-shell${islandOpen ? " widget-shell-expanded" : ""}${islandClosing ? " widget-shell-closing" : ""}`} onTransitionEnd={event => {
@@ -723,6 +807,7 @@ export function TodayWidget() {
             <button className="widget-hide" onClick={() => void setIslandOpen(false)} aria-label={islandClosing ? "Menutup panel ke Dynamic Island" : "Tutup panel kembali ke Dynamic Island"} aria-busy={islandClosing} title="Tutup ke Dynamic Island"><Icon name="close" size={14} /></button>
           </div>
         </header>
+        {renderUpdateNotice()}
         {error && <div className="widget-error" role="alert"><span>{error}</span><button onClick={() => void refresh()}>Coba lagi</button></div>}
         {focusTask ? <main className="widget-focus-content">
           <article className={`widget-focus-card${focusIsOverdue ? " is-overdue" : ""}`}>
@@ -751,6 +836,7 @@ export function TodayWidget() {
             <button className="widget-hide" onClick={() => void setIslandOpen(false)} aria-label={islandClosing ? "Menutup panel ke Dynamic Island" : "Tutup panel kembali ke Dynamic Island"} aria-busy={islandClosing} title="Tutup ke Dynamic Island"><Icon name="close" size={15} /></button>
           </div>
         </header>
+        {renderUpdateNotice()}
 
         <main className="widget-scroll">
           {panelMode !== "calendar" && <section className="widget-greeting">

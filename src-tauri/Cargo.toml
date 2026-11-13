@@ -1,6 +1,6 @@
 [package]
 name = "daymark-workspace"
-version = "0.1.6"
+version = "0.1.7"
 description = "Local-first daily task workspace"
 authors = ["Daymark"]
 edition = "2021"
@@ -24,6 +24,8 @@ tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-single-instance = "2"
 uuid = { version = "1", features = ["v4"] }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

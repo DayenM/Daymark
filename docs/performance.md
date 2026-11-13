@@ -20,6 +20,7 @@ The UI also had idle looping decorative animations and multiple glass layers wit
 - Main glass blur is now 12px maximum; titlebar/sidebar and modal sticky surfaces are 10px; the collapsed island is 8px and expanded island is 12px. Neumorphism disables backdrop filters.
 - The panel view dropdown is mounted only while opened by the user. Its single popover uses an 8px glass blur and is removed on selection, outside click, Escape, or focus leaving; it adds no polling, recurring timer, or idle animation.
 - The scheduler still blocks between checks and wakes on the existing Tauri resume event.
+- Update discovery adds no scheduler wakeups or JavaScript timer: the widget checks once on mount, then the existing scheduler requests another check on Tauri's best-effort event-loop resume signal or at a six-hour wall-clock deadline. The scheduler keeps its 60-second blocking reminder wait; that fallback also catches up after a long suspend. Network work is limited to those checks, and downloads begin only after the user selects **Pasang**. Installation can temporarily use CPU, disk, and bandwidth; this change has not been measured on the target laptop, so no CPU/RAM improvement or unchanged peak is claimed.
 
 ## Confirmed renderer loop and runtime measurements
 

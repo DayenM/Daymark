@@ -5,7 +5,7 @@ use std::{
         Arc, Mutex,
     },
     thread,
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use rusqlite::Connection;
@@ -22,6 +22,7 @@ pub fn start(app: AppHandle, state: DbState, wake_receiver: Receiver<()>) {
     thread::Builder::new()
         .name("daymark-reminder-scheduler".into())
         .spawn(move || {
+            let mut next_update_check = SystemTime::now() + Duration::from_secs(6 * 60 * 60);
             loop {
                 deliver_due_reminders(&app, &state.0);
                 present_daily_briefing(&app, &state.0);
@@ -29,7 +30,16 @@ pub fn start(app: AppHandle, state: DbState, wake_receiver: Receiver<()>) {
                 // shortcut: cap the idle wait at 60s to catch wake and clock changes;
                 // use native power broadcasts if a tighter resume guarantee is required.
                 match wake_receiver.recv_timeout(Duration::from_secs(60)) {
-                    Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                    Ok(()) => {
+                        let _ = app.emit_to("today-widget", "update-check-requested", ());
+                        next_update_check = SystemTime::now() + Duration::from_secs(6 * 60 * 60);
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                        if SystemTime::now() >= next_update_check {
+                            let _ = app.emit_to("today-widget", "update-check-requested", ());
+                            next_update_check = SystemTime::now() + Duration::from_secs(6 * 60 * 60);
+                        }
+                    }
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
                 }
             }

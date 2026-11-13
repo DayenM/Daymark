@@ -19,7 +19,7 @@ npm install
 npm run tauri dev
 ```
 
-Rilis NSIS:
+Build rilis NSIS:
 
 ```powershell
 npm run tauri build
@@ -27,9 +27,7 @@ npm run tauri build
 
 Installer menanam bootstrapper WebView2 (~1,8 MB). Windows 10/11 umumnya sudah
 menyertakan runtime; jika belum tersedia, installer memerlukan internet untuk
-mengunduhnya. Artifact NSIS x64 saat ini berukuran 4,58 MiB:
-`src-tauri/target/release/bundle/nsis/Daymark_0.1.6_x64-setup.exe`. Mode offline
-terlalu besar untuk batas 150 MB.
+mengunduhnya. Distribusi menggunakan installer NSIS x64.
 
 ## Perilaku aplikasi
 
@@ -66,3 +64,43 @@ dibangun, tetapi perilaku interaktif Windows belum diverifikasi dengan
 menjalankan installer.
 
 Panduan batasan CPU/RAM dan evaluasi performa ada di [docs/performance.md](docs/performance.md).
+
+## Pembaruan aplikasi
+
+Source ada di repo privat [Daymark](https://github.com/DayenM/Daymark). Installer,
+signature, dan `latest.json` dipublikasikan di repo publik
+[Daymark-Releases](https://github.com/DayenM/Daymark-Releases); repo publik tidak
+menyimpan source atau data tugas. Daymark 0.1.7 adalah versi pertama dengan
+updater. Pengguna 0.1.6 perlu memasang 0.1.7 sekali secara manual; sesudahnya
+Daymark dapat memberi notifikasi dan memasang update bertanda tangan setelah
+pengguna memilih **Pasang**.
+
+### Menyiapkan GitHub Actions
+
+Tambahkan secret berikut pada repo privat **Settings → Secrets and variables →
+Actions**:
+
+- `TAURI_SIGNING_PRIVATE_KEY`: disiapkan untuk repo ini. File kunci lokal ada di
+  `%LOCALAPPDATA%\Daymark\signing\daymark-updater.key`; jangan commit atau bagikan
+  file itu. Jika kunci dibuat ulang dengan password, tambahkan juga
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+- `DAYMARK_RELEASES_TOKEN`: buat fine-grained personal access token yang hanya
+  diberi akses ke repo `Daymark-Releases` dengan **Contents: Read and write**.
+  Simpan nilainya sebagai Actions secret; jangan menaruh token di source atau
+  mengirimkannya lewat chat.
+
+### Menerbitkan versi berikutnya
+
+Ubah versi di `package.json`, `src-tauri/Cargo.toml`, dan
+`src-tauri/tauri.conf.json` agar sama, commit dan push ke `main`, lalu buat tag
+yang cocok, misalnya:
+
+```powershell
+git tag v0.1.8
+git push origin v0.1.8
+```
+
+Workflow `.github/workflows/release.yml` membangun installer NSIS x64 dan
+mengirim installer, signature, serta manifest ke repo publik. Tag tidak akan
+diterbitkan jika tidak cocok dengan versi Tauri. Pemeriksaan update hanya
+mengambil metadata/installer; database dan tugas lokal tidak pernah diunggah.
