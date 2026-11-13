@@ -3,7 +3,22 @@
 Daymark adalah workspace desktop lokal untuk brief pagi, tugas, project,
 catatan, dan pengingat. Aplikasi ditujukan lebih dulu untuk Windows 10/11 x64.
 
-## Menjalankan dari source
+## Instalasi langsung untuk Windows
+
+1. Buka [rilis Daymark terbaru](https://github.com/DayenM/Daymark/releases/latest).
+2. Unduh file `Daymark_X.Y.Z_x64-setup.exe` dari bagian **Assets**.
+3. Klik dua kali installer dan ikuti langkah pemasangan.
+
+Pengguna biasa tidak perlu memasang Node.js, Rust, C++ Build Tools, atau
+mengetik perintah terminal. Daymark ditujukan untuk Windows 10/11 x64. Installer
+membawa bootstrapper WebView2; jika runtime belum ada, koneksi internet
+diperlukan untuk mengunduhnya.
+
+> Catatan untuk pengguna 0.1.6: pasang 0.1.7 secara manual satu kali. Versi
+> 0.1.6 belum memiliki updater; sesudah memasang 0.1.7, pembaruan berikutnya
+> dapat ditemukan dari dalam aplikasi.
+
+## Untuk developer: menjalankan dari source
 
 Prasyarat development:
 
@@ -25,9 +40,7 @@ Build rilis NSIS:
 npm run tauri build
 ```
 
-Installer menanam bootstrapper WebView2 (~1,8 MB). Windows 10/11 umumnya sudah
-menyertakan runtime; jika belum tersedia, installer memerlukan internet untuk
-mengunduhnya. Distribusi menggunakan installer NSIS x64.
+Build rilis menghasilkan installer NSIS x64.
 
 ## Perilaku aplikasi
 
@@ -74,9 +87,8 @@ lokal tidak diunggah. Repo tidak memiliki hide per file: semua file terlacak dan
 riwayat commit dapat dilihat publik. `.gitignore` mengecualikan database,
 environment lokal, build output, dan private signing key.
 
-Daymark 0.1.7 adalah versi pertama dengan updater. Pengguna 0.1.6 perlu memasang
-0.1.7 sekali secara manual; sesudahnya Daymark dapat memberi notifikasi dan
-memasang update bertanda tangan setelah pengguna memilih **Pasang**.
+Daymark 0.1.7 adalah versi pertama dengan updater. Sesudah pembaruan ditemukan,
+Daymark memberi notifikasi dan memasangnya setelah pengguna memilih **Pasang**.
 
 ### GitHub Actions dan signing
 
