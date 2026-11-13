@@ -10,9 +10,11 @@
   Contents read/write. Until then, the workflow can build but cannot publish.
 - Bootstrap: `0.1.7` is the first updater-enabled build; `0.1.6` users need one
   manual install.
-- Verification: the Vite production bundle completed, but the Windows Rust
-  release build stopped with OS error 112 while writing a `.lib` file because
-  C: had roughly 0.12 GB free. No automated tests or runtime UI checks were run.
+- Verification: the Vite production bundle and signed Windows x64 NSIS release
+  build completed. Outputs: `Daymark_0.1.7_x64-setup.exe` (5.37 MiB) and its
+  updater `.sig`. The first build attempt hit OS error 112 with only 0.12 GB
+  free; a retry completed after free space recovered. No automated tests,
+  installer launch, or runtime UI checks were run.
 - Publishing: no version tag or public release has been created.
 
 ## Scope and files
