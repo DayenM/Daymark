@@ -1,5 +1,7 @@
 node_modules/
 .codegraph/
+AGENTS.md
+docs/superpowers/
 dist/
 src-tauri/target/
 src-tauri/gen/

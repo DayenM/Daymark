@@ -49,9 +49,11 @@ CSV samples are in `%TEMP%` as `daymark-idle-20261112.csv`, `daymark-idle-after-
 
 For any change affecting idle UI, window count, rendering, timers, scheduler, notifications, or transparency:
 
-1. Keep the workspace WebView lazy and the widget's idle path event-driven.
-2. Review this file and `AGENTS.md`; do not introduce recurring frontend polling or idle animation without a product requirement and measured justification.
-3. Compare release builds on the same Windows machine, power mode, display scaling, theme, task dataset, and window state. Record idle and expanded-widget CPU, process memory (including WebView2 child processes), and fan/power behavior for a consistent observation period.
-4. Separate build evidence from runtime performance evidence. A successful build is not proof of reduced CPU/RAM.
-5. Update this note with the measurement method and actual before/after values; never invent a numeric budget before a baseline exists.
+1. Keep `today-widget` as the only WebView for tray/idle operation. Create `main` only when requested and destroy it when closed.
+2. Memoize Tauri window wrappers before using them as React effect dependencies. Avoid unbounded polling, recurring JavaScript timers, and `requestAnimationFrame` loops; prefer native events and blocking waits, and clear every timer/listener on unmount.
+3. Keep motion user-triggered or short-lived, preserve reduced-motion support, limit glass blur to 12px (8px collapsed), avoid stacking native Acrylic with stronger CSS blur, and disable backdrop filters in Neumorphism.
+4. Preserve the reminder scheduler's blocking wait and wake signal. Do not shorten its 60-second fallback without a demonstrated reminder-timing requirement.
+5. Inspect the full call path before changing window lifetime, scheduler cadence, render loops, blur, or always-on UI. Update this note when those design constraints change.
+6. Compare release builds on the same Windows machine, power mode, display scaling, theme, task dataset, and window state. Record idle and expanded-widget CPU, process memory (including WebView2 child processes), and fan/power behavior for a consistent observation period.
+7. Separate build evidence from runtime performance evidence. A successful build is not proof of reduced CPU/RAM. Record actual before/after measurements; never claim an improvement without them or invent a numeric budget before a baseline exists.
 

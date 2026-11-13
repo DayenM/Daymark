@@ -1,111 +1,94 @@
 # Daymark
 
-Daymark adalah workspace desktop lokal untuk brief pagi, tugas, project,
-catatan, dan pengingat. Aplikasi ditujukan lebih dulu untuk Windows 10/11 x64.
+<p align="center">
+  <strong>Rencanakan hari. Jaga fokus.</strong><br>
+  Workspace desktop lokal untuk tugas, proyek, catatan, kalender, dan pengingat.
+</p>
 
-## Instalasi langsung untuk Windows
+<p align="center">
+  <a href="https://github.com/DayenM/Daymark/releases/latest"><img src="https://img.shields.io/github/v/release/DayenM/Daymark?label=rilis&color=F9688D" alt="Rilis terbaru"></a>
+  <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-534859" alt="Windows 10 dan 11">
+  <img src="https://img.shields.io/badge/Tauri-v2-534859" alt="Tauri v2">
+</p>
+
+<p align="center">
+  <a href="https://github.com/DayenM/Daymark/releases/latest"><strong>Unduh untuk Windows →</strong></a>
+</p>
+
+<p align="center">
+  <img src="demo/Panel-Hari-Ini-wide.png" alt="Panel harian Daymark" width="560">
+</p>
+
+## Tentang Daymark
+
+Daymark adalah aplikasi produktivitas desktop yang membantu Anda melihat apa yang perlu dikerjakan hari ini, menangkap tugas dengan cepat, lalu merapikannya dalam satu workspace. Panel hariannya tetap dekat saat dibutuhkan, sementara tugas, proyek, kalender, dan catatan tersimpan lokal di perangkat.
+
+## Keunggulan Daymark
+
+- **Mulai hari dengan jelas** — briefing menampilkan tugas hari ini, hal yang perlu ditinjau, dan progres penyelesaian.
+- **Akses dari panel desktop** — buka Dynamic Island, ubah ukurannya, pindahkan, sematkan di atas aplikasi lain, atau sesuaikan transparansinya.
+- **Simpan detail tugas** — atur prioritas, jadwal, pengingat, pengulangan, proyek, tag, subtugas, dan catatan Markdown.
+- **Atur ritme kerja** — gunakan kalender dengan penanda hari bertugas, mode Fokus, dan mode Istirahat.
+- **Tangkap ide seketika** — buka Quick Capture dari mana saja dengan `Ctrl+Shift+T`; pengingat dapat dikirim sebagai notifikasi Windows.
+- **Simpan konteks dalam satu tempat** — kelola proyek dan catatan, lalu ekspor atau impor backup JSON.
+- **Sesuaikan tampilannya** — pilih Glass terang, Glass gelap, atau Neumorphic dan gunakan keluarga font yang nyaman dibaca.
+- **Tetap mudah dijangkau** — Daymark dapat berjalan di system tray dan dibuka bersama Windows; startup dapat diatur dari aplikasi.
+
+## Teknologi
+
+| Bagian | Teknologi | Peran |
+| --- | --- | --- |
+| Desktop | Tauri v2 | Jendela, tray, startup, hotkey, dan notifikasi Windows |
+| UI | React, TypeScript, Vite | Panel harian dan workspace |
+| Native | Rust | Perintah aplikasi, scheduler, dan akses data |
+| Database | SQLite dengan WAL | Menyimpan tugas, proyek, catatan, dan pengaturan di perangkat |
+| Web runtime | Microsoft WebView2 | Merender UI Windows tanpa membundel browser Chromium terpisah |
+
+## Instalasi untuk pengguna Windows
 
 1. Buka [rilis Daymark terbaru](https://github.com/DayenM/Daymark/releases/latest).
-2. Unduh file `Daymark_X.Y.Z_x64-setup.exe` dari bagian **Assets**.
-3. Klik dua kali installer dan ikuti langkah pemasangan.
+2. Unduh `Daymark_X.Y.Z_x64-setup.exe` dari bagian **Assets**.
+3. Jalankan installer dan ikuti langkah pemasangan.
 
-Pengguna biasa tidak perlu memasang Node.js, Rust, C++ Build Tools, atau
-mengetik perintah terminal. Daymark ditujukan untuk Windows 10/11 x64. Installer
-membawa bootstrapper WebView2; jika runtime belum ada, koneksi internet
-diperlukan untuk mengunduhnya.
+Selesai—Anda tidak perlu memasang Node.js, Rust, C++ Build Tools, atau mengetik perintah terminal untuk menggunakan aplikasi. Installer membawa bootstrapper WebView2; jika WebView2 Runtime belum tersedia di Windows, koneksi internet diperlukan agar installer dapat mengunduhnya.
 
-> Catatan untuk pengguna 0.1.6: pasang 0.1.7 secara manual satu kali. Versi
-> 0.1.6 belum memiliki updater; sesudah memasang 0.1.7, pembaruan berikutnya
-> dapat ditemukan dari dalam aplikasi.
+> **Menggunakan Daymark 0.1.6?** Versi tersebut belum memiliki updater. Unduh rilis terbaru dari halaman di atas dan pasang manual satu kali; sesudahnya, Daymark dapat memberi tahu saat pembaruan tersedia dan memasangnya setelah Anda memilih **Pasang**.
 
-## Untuk developer: menjalankan dari source
+## Data dan pembaruan
 
-Prasyarat development:
+Workspace disimpan di database lokal pada direktori data aplikasi Windows. Pemeriksaan pembaruan tidak mengunggah database tugas. Backup JSON tersedia di **Pengaturan → Backup workspace**.
+
+Pembaruan aplikasi diterbitkan melalui [GitHub Releases](https://github.com/DayenM/Daymark/releases). Windows dapat menunda notifikasi saat Do Not Disturb aktif atau perangkat tidur; pengingat akan diperiksa kembali ketika aplikasi mendapat sinyal resume.
+
+## Menjalankan dari source
+
+> Bagian ini hanya untuk developer. Pengguna biasa cukup memakai installer di atas.
+
+Prasyarat:
 
 - Node.js 20.19+ atau 22.12+
 - Rust stable MSVC 1.90+
 - Microsoft C++ Build Tools dengan workload **Desktop development with C++**
 - WebView2 Runtime
 
-Perintah:
+Jalankan mode development:
 
 ```powershell
 npm install
 npm run tauri dev
 ```
 
-Build rilis NSIS:
+Build installer NSIS x64:
 
 ```powershell
 npm run tauri build
 ```
 
-Build rilis menghasilkan installer NSIS x64.
+## Dokumentasi teknis
 
-## Perilaku aplikasi
+- [Panduan performa CPU dan memori](docs/performance.md)
+- [Panduan merilis Daymark](docs/releasing.md)
 
-- Startup Windows aktif secara default dan dapat dimatikan dari Pengaturan.
-- Menutup jendela menyembunyikan aplikasi ke system tray. Gunakan menu tray
-  **Keluar** untuk menghentikan process.
-- `Ctrl+Shift+T` membuka Quick Capture dari aplikasi lain.
-- Briefing harian muncul saat startup Windows jika belum diakui, dan saat
-  tanggal lokal berganti. Opsi tunda 15 menit menyembunyikan jendela sementara.
-- Pengingat disimpan bersama tugas dan dikirim sebagai notifikasi native.
-- Tema: Glass terang, Glass gelap, dan Neumorphic.
-- Backup JSON mengekspor tugas, catatan, tag, project, serta status. Impor
-  menambahkan data ke workspace saat ini; impor file sama dua kali membuat
-  duplikasi.
+## Kontribusi dan lisensi
 
-## Data lokal
-
-Database dibuat saat first run lewat `app_data_dir()` milik Tauri, yang
-menyelesaikan direktori pengguna saat runtime (Windows: `%APPDATA%`), lalu
-membuat folder dan skema SQLite secara otomatis. SQLite memakai WAL dan
-seluruh operasi native mengalir melalui command Rust. Backup JSON dapat dibuat
-dari **Pengaturan → Backup workspace**.
-
-## Batas implementasi awal
-
-Scheduler memeriksa pengingat paling lama setiap 60 detik dan langsung memeriksa
-lagi saat event resume diterima. Karena Windows dapat menahan toast saat Focus
-Assist/Do Not Disturb atau ketika perangkat tidur, aplikasi tidak dapat menjamin
-toast terlihat tepat pada waktunya. Jika pengiriman native gagal, reminder tetap
-dicoba kembali.
-
-Notifikasi Windows, perilaku tray, hotkey, backup, dan transisi tema sudah
-dibangun, tetapi perilaku interaktif Windows belum diverifikasi dengan
-menjalankan installer.
-
-Panduan batasan CPU/RAM dan evaluasi performa ada di [docs/performance.md](docs/performance.md).
-
-## Source dan pembaruan aplikasi
-
-Source Daymark dan rilis installer bertanda tangan berada di repo publik
-[DayenM/Daymark](https://github.com/DayenM/Daymark). Setiap rilis berisi source,
-installer NSIS, signature, dan `latest.json`; database tugas dan konfigurasi
-lokal tidak diunggah. Repo tidak memiliki hide per file: semua file terlacak dan
-riwayat commit dapat dilihat publik. `.gitignore` mengecualikan database,
-environment lokal, build output, dan private signing key.
-
-Daymark 0.1.7 adalah versi pertama dengan updater. Sesudah pembaruan ditemukan,
-Daymark memberi notifikasi dan memasangnya setelah pengguna memilih **Pasang**.
-
-### GitHub Actions dan signing
-
-Private signing key disimpan sebagai secret `TAURI_SIGNING_PRIVATE_KEY` di
-**Settings → Secrets and variables → Actions**. File lokalnya berada di
-`%LOCALAPPDATA%\Daymark\signing\daymark-updater.key`; jangan commit atau bagikan
-file itu. Jika key dibuat dengan password, tambahkan secret
-`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Token lintas-repo tidak diperlukan karena
-workflow menerbitkan release ke repo yang sama menggunakan `GITHUB_TOKEN`.
-
-Push tag versi `vX.Y.Z` yang cocok dengan versi di `package.json`,
-`src-tauri/Cargo.toml`, dan `src-tauri/tauri.conf.json` untuk membangun dan
-menerbitkan NSIS x64, signature, serta updater manifest. Push biasa ke `main`
-tidak menerbitkan installer.
-
-Kontributor publik dapat mengusulkan perubahan melalui pull request. Beri akses
-write hanya kepada orang tepercaya: akses itu juga dapat menjalankan release
-workflow dengan signing key. Pemilik repo sebaiknya meninjau dan menerbitkan tag
-rilis sendiri. Repo ini belum memiliki file `LICENSE`; publikasi tidak otomatis
-memberi lisensi bebas pakai di luar kemampuan view/fork GitHub.
+Kontribusi dapat diajukan melalui pull request. Repo ini belum memiliki file `LICENSE`, sehingga kode belum diberikan lisensi umum untuk digunakan ulang.
