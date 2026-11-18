@@ -3,6 +3,9 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { confirm, open, save } from "@tauri-apps/plugin-dialog";
+import { getVersion } from "@tauri-apps/api/app";
+import { check, type Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import type { FontFamily, Priority, Project, QuickNote, Task, TaskDraft, Theme, ViewKey, WorkspaceSnapshot } from "./types";
 import { Icon, type IconName } from "./components/Icon";
 import { AppearancePicker } from "./components/AppearancePicker";
@@ -575,7 +578,74 @@ function SettingsPage({ snapshot, widgetTransparency, appTransparency, onTheme, 
         <div className="settings-card-copy"><span className="settings-icon"><Icon name="note" /></span><div><h3>Backup workspace</h3><p>Ekspor salinan JSON atau gabungkan backup dari perangkat lain.</p></div></div>
         <div className="button-pair"><button className="text-button" onClick={onImport}>Impor JSON</button><button className="soft-button" onClick={onExport}>Ekspor backup</button></div>
       </section>
+      <UpdateCard />
       <div className="data-location"><span className="local-dot" /><div><strong>Data lokal aktif</strong><p>Database dan catatanmu disimpan di folder AppData pengguna Windows.</p></div></div>
     </div>
+  );
+}
+
+type UpdateStatus =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "latest" }
+  | { kind: "available"; version: string }
+  | { kind: "installing" }
+  | { kind: "error"; message: string };
+
+function UpdateCard() {
+  const [version, setVersion] = useState("");
+  const [status, setStatus] = useState<UpdateStatus>({ kind: "idle" });
+  const handle = useRef<Update | null>(null);
+
+  useEffect(() => {
+    void getVersion().then(setVersion).catch(() => undefined);
+    return () => { void handle.current?.close().catch(() => undefined); };
+  }, []);
+
+  async function checkNow() {
+    setStatus({ kind: "checking" });
+    try {
+      void handle.current?.close().catch(() => undefined);
+      handle.current = null;
+      const update = await check({ timeout: 15_000 });
+      if (!update) {
+        setStatus({ kind: "latest" });
+        return;
+      }
+      handle.current = update;
+      setStatus({ kind: "available", version: update.version });
+    } catch (value) {
+      setStatus({ kind: "error", message: value instanceof Error ? value.message : String(value) });
+    }
+  }
+
+  async function install() {
+    if (!handle.current) return;
+    setStatus({ kind: "installing" });
+    try {
+      await handle.current.downloadAndInstall();
+      await relaunch();
+    } catch (value) {
+      setStatus({ kind: "error", message: value instanceof Error ? value.message : String(value) });
+    }
+  }
+
+  const detail = {
+    idle: "Daymark juga memeriksa otomatis di latar belakang.",
+    checking: "Memeriksa rilis terbaru…",
+    latest: "Kamu sudah memakai versi terbaru.",
+    available: status.kind === "available" ? `Versi ${status.version} siap dipasang. Daymark akan dimulai ulang.` : "",
+    installing: "Mengunduh dan memasang pembaruan…",
+    error: status.kind === "error" ? `Gagal memeriksa pembaruan: ${status.message}` : "",
+  }[status.kind];
+  const busy = status.kind === "checking" || status.kind === "installing";
+
+  return (
+    <section className="settings-section settings-card">
+      <div className="settings-card-copy"><span className="settings-icon"><Icon name="repeat" /></span><div><h3>Pembaruan aplikasi{version && ` · v${version}`}</h3><p role="status" aria-live="polite">{detail}</p></div></div>
+      {status.kind === "available"
+        ? <button className="soft-button" onClick={() => void install()}>Pasang &amp; mulai ulang <Icon name="arrow" size={14} /></button>
+        : <button className="soft-button" onClick={() => void checkNow()} disabled={busy}>{status.kind === "installing" ? "Memasang…" : busy ? "Memeriksa…" : "Periksa pembaruan"}</button>}
+    </section>
   );
 }
