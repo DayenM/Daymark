@@ -3,7 +3,7 @@ import { Icon, type IconName } from "./Icon";
 
 const options: { value: Theme; title: string; description: string; icon: IconName }[] = [
   { value: "glass_light", title: "Glass terang", description: "Lembut dan bercahaya", icon: "sun" },
-  { value: "glass_dark", title: "Glass gelap", description: "Plum berlapis kaca", icon: "moon" },
+  { value: "glass_dark", title: "Glass gelap", description: "Hitam pekat berlapis kaca", icon: "moon" },
   { value: "neumorphic", title: "Neumorphic", description: "Permukaan tactile", icon: "layers" },
 ];
 

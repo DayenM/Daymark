@@ -141,7 +141,11 @@ pub fn sync_main_window_material(app: &AppHandle, theme: &str, transparency: u8)
         let effects = (transparency > 0 && theme != "neumorphic").then(|| {
             EffectsBuilder::new()
                 .effect(Effect::Acrylic)
-                .color(Color(83, 72, 89, 142))
+                .color(if theme == "glass_light" {
+                    Color(245, 245, 247, 150)
+                } else {
+                    Color(10, 10, 11, 150)
+                })
                 .build()
         });
         if let Err(error) = window.set_effects(effects) {

@@ -24,7 +24,8 @@ const panelChoices: PanelChoice[] = [
   { mode: "calendar", label: "Kalender", icon: "calendar" },
   { mode: "rest", label: "Istirahat", icon: "moon" },
 ];
-const ISLAND_SIZE = { width: 220, height: 36 };
+// Notch (210×32) + 10px concave ears each side + room for its drop shadow.
+const ISLAND_SIZE = { width: 230, height: 40 };
 const DEFAULT_WIDGET_SIZE = { width: 400, height: 620 };
 const FOCUS_WIDGET_SIZE = { width: 390, height: 184 };
 
@@ -784,7 +785,9 @@ export function TodayWidget() {
   }
 
   return (
-    <div className="today-widget-window">
+    <div className={`today-widget-window${islandOpen && !islandClosing ? " island-expanded" : ""}`}>
+      <i className="widget-notch-ear left" aria-hidden="true" />
+      <i className="widget-notch-ear right" aria-hidden="true" />
       <section className={`today-widget-shell${islandOpen ? " widget-shell-expanded" : ""}${islandClosing ? " widget-shell-closing" : ""}`} onTransitionEnd={event => {
         if (event.target === event.currentTarget && event.propertyName === "height" && islandClosingRef.current) void finishIslandClose();
       }}>

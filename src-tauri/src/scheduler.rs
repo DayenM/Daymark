@@ -190,7 +190,8 @@ pub fn position_widget(window: &WebviewWindow) -> Result<(), String> {
     window
         .set_position(PhysicalPosition::new(
         monitor_position.x + centered_offset,
-        monitor_position.y + 4,
+        // Flush with the top edge so the island reads as a notch.
+        monitor_position.y,
         ))
         .map_err(|error| error.to_string())
 }
