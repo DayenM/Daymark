@@ -48,7 +48,7 @@
   --primary-action-hover-bg: var(--plum);
   --primary-action-shadow: 0 3px 10px rgb(var(--plum-rgb) / .12);
   --primary-action-hover-shadow: 0 6px 16px rgb(var(--plum-rgb) / .20);
-  --secondary-action-bg: var(--blush);
+  --secondary-action-bg: rgb(var(--blush-rgb) / var(--glass-secondary-alpha));
   --secondary-action-ink: var(--plum);
   --secondary-action-border: rgb(var(--plum-rgb) / .08);
   --secondary-action-hover-bg: rgb(var(--blush-rgb) / .76);
@@ -69,7 +69,7 @@
   --urgent-badge-ink: var(--plum);
   --data-surface: rgb(var(--blush-rgb) / .26);
   --specular-edge: linear-gradient(160deg, rgb(255 255 255 / .98) 0%, rgb(255 255 255 / .55) 22%, rgb(var(--plum-rgb) / .08) 60%, rgb(var(--plum-rgb) / .18) 100%);
-  --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / .55), rgb(255 255 255 / 0) 42%);
+  --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / calc(var(--glass-content-alpha) * .55)), rgb(255 255 255 / 0) 42%);
   --neu-highlight: rgb(255 255 255 / .98);
   --neu-shadow-opaque: color-mix(in oklch, var(--cream) 70%, var(--plum) 30%);
   --neu-shadow: color-mix(in oklch, var(--neu-shadow-opaque) 28%, transparent);
@@ -938,14 +938,14 @@ button:active .daymark-icon { transform: scale(.94); }
    Collapsed island = a hardware-style black notch glued to the top edge: square top, rounded bottom,
    and concave "ears" that melt it into the screen edge. It stays pure black in every theme.
    Width/height use one spring; content fades/scales in from top-centre after the shell has grown. */
-.today-widget-window { --notch-w: 210px; --notch-h: 32px; --notch-r: 15px; --notch-ear: 10px; --notch-spring: cubic-bezier(.34, 1.32, .5, 1); }
+.today-widget-window { --notch-bg: var(--plum); --notch-w: 210px; --notch-h: 32px; --notch-r: 15px; --notch-ear: 10px; --notch-spring: cubic-bezier(.34, 1.32, .5, 1); }
 .today-widget-window:not(.island-expanded):has(.widget-rest-island:hover) { --notch-w: 218px; }
 :root .today-widget-window .today-widget-shell { transition: width .62s var(--notch-spring), height .62s var(--notch-spring), border-radius .45s ease, box-shadow .3s ease; }
-:root .today-widget-window .today-widget-shell:is(:not(.widget-shell-expanded), .widget-shell-closing) { width: var(--notch-w); height: var(--notch-h); border: 0; border-radius: 0 0 var(--notch-r) var(--notch-r); color: #fff; background: #000; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 8px 16px -10px rgb(0 0 0 / .9); }
+:root .today-widget-window .today-widget-shell:is(:not(.widget-shell-expanded), .widget-shell-closing) { width: var(--notch-w); height: var(--notch-h); border: 0; border-radius: 0 0 var(--notch-r) var(--notch-r); color: #fff; background: radial-gradient(120% 150% at 50% 0%, rgb(var(--coral-rgb) / .22), transparent 70%), var(--notch-bg); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 8px 16px -10px rgb(0 0 0 / .9); }
 :root .today-widget-window .today-widget-shell.widget-shell-expanded:not(.widget-shell-closing) { border-radius: 16px 16px 28px 28px; }
 .widget-notch-ear { position: absolute; z-index: 1; top: 0; width: var(--notch-ear); height: var(--notch-ear); pointer-events: none; opacity: 1; transition: left .62s var(--notch-spring), right .62s var(--notch-spring), opacity .18s ease .34s; }
-.widget-notch-ear.left { right: calc(50% + var(--notch-w) / 2); background: radial-gradient(circle at 0 100%, transparent calc(var(--notch-ear) - .5px), #000 var(--notch-ear)); }
-.widget-notch-ear.right { left: calc(50% + var(--notch-w) / 2); background: radial-gradient(circle at 100% 100%, transparent calc(var(--notch-ear) - .5px), #000 var(--notch-ear)); }
+.widget-notch-ear.left { right: calc(50% + var(--notch-w) / 2); background: radial-gradient(circle at 0 100%, transparent calc(var(--notch-ear) - .5px), var(--notch-bg) var(--notch-ear)); }
+.widget-notch-ear.right { left: calc(50% + var(--notch-w) / 2); background: radial-gradient(circle at 100% 100%, transparent calc(var(--notch-ear) - .5px), var(--notch-bg) var(--notch-ear)); }
 .today-widget-window.island-expanded .widget-notch-ear { opacity: 0; transition: opacity .08s ease; }
 :root .today-widget-window .widget-rest-island { padding: 0 12px; color: #fff; }
 :root .today-widget-window .widget-rest-island:hover { background: rgb(255 255 255 / .05); }
@@ -954,7 +954,7 @@ button:active .daymark-icon { transform: scale(.94); }
 :root .today-widget-window .widget-rest-eyes i { background: #fff; box-shadow: 0 0 8px rgb(255 255 255 / .6); }
 :root .today-widget-window .widget-rest-copy strong { color: #fff; }
 :root .today-widget-window .widget-rest-copy small { color: rgb(255 255 255 / .6); }
-:root .today-widget-window .widget-rest-count { border-color: transparent; color: #000; background: #fff; }
+:root .today-widget-window .widget-rest-count { border-color: transparent; color: var(--notch-bg); background: #fff; }
 .today-widget-window .widget-panel-content { transform: scale(.94, .9); transform-origin: 50% 0; transition: opacity .16s ease, transform .2s ease; }
 .today-widget-window .today-widget-shell.widget-shell-expanded:not(.widget-shell-closing) .widget-panel-content { opacity: 1; transform: none; transition: opacity .45s ease .12s, transform .5s cubic-bezier(.2, .85, .25, 1) .06s; }
 .today-widget-window .today-widget-shell.widget-shell-closing .widget-panel-content { opacity: 0; transform: scale(.96, .92); transition: opacity .12s ease, transform .16s ease; }

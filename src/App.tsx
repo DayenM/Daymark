@@ -126,7 +126,7 @@ function WorkspaceApp() {
 
   useEffect(() => {
     const level = applyGlassAlpha(appTransparency, snapshot?.theme);
-    document.documentElement.style.setProperty("--app-window-opacity", String(1 - level * .55));
+    document.documentElement.style.setProperty("--app-window-opacity", String(1 - level * .85));
   }, [appTransparency, snapshot?.theme]);
 
   useEffect(() => () => {
@@ -144,7 +144,8 @@ function WorkspaceApp() {
       }
     });
     void Promise.all([
-      listen("quick-capture", () => setQuickCaptureOpen(true)),
+      // Window-scoped: the hotkey targets only the window the user is looking at.
+      getCurrentWindow().listen("quick-capture", () => setQuickCaptureOpen(true)),
       listen("briefing-needed", () => {
         setView("briefing");
         void refresh().catch(value => setError(errorMessage(value)));

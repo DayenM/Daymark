@@ -197,6 +197,13 @@ pub fn position_widget(window: &WebviewWindow) -> Result<(), String> {
 }
 
 pub fn open_quick_capture(app: &AppHandle) {
+    // Open capture only where the user is: the workspace when it has focus, otherwise the panel.
+    if let Some(main) = app.get_webview_window("main") {
+        if main.is_focused().unwrap_or(false) {
+            let _ = app.emit_to("main", "quick-capture", ());
+            return;
+        }
+    }
     show_today_widget(app);
     let _ = app.emit_to("today-widget", "quick-capture", ());
 }

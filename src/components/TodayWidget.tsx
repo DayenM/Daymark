@@ -166,7 +166,7 @@ export function TodayWidget() {
     let active = true;
     void Promise.all([
       listen("workspace-updated", () => void refresh()),
-      listen("quick-capture", () => {
+      getCurrentWindow().listen("quick-capture", () => {
         void (async () => {
           await changePanelMode("todo");
           await setIslandOpen(true);

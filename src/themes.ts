@@ -25,8 +25,9 @@ export function applyTheme(theme: Theme) {
 export function applyGlassAlpha(percent: number, theme: Theme | undefined) {
   const level = theme === "neumorphic" ? 0 : percent / 40;
   const style = document.documentElement.style;
-  style.setProperty("--glass-surface-alpha", String(.94 - level * .36));
-  style.setProperty("--glass-content-alpha", String(.98 - level * .3));
-  style.setProperty("--glass-secondary-alpha", String(.88 - level * .32));
+  // At 40% every surface (cards, inputs, secondary buttons) is mostly see-through; Acrylic keeps text legible.
+  style.setProperty("--glass-surface-alpha", String(.94 - level * .66));
+  style.setProperty("--glass-content-alpha", String(.98 - level * .64));
+  style.setProperty("--glass-secondary-alpha", String(.88 - level * .58));
   return level;
 }
