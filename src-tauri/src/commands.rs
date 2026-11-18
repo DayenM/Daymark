@@ -141,10 +141,14 @@ pub fn sync_main_window_material(app: &AppHandle, theme: &str, transparency: u8)
         let effects = (transparency > 0 && theme != "neumorphic").then(|| {
             EffectsBuilder::new()
                 .effect(Effect::Acrylic)
-                .color(if theme == "glass_light" {
-                    Color(245, 245, 247, 150)
-                } else {
-                    Color(10, 10, 11, 150)
+                // Tint = the theme's base colour, so Acrylic matches the CSS surface.
+                .color(match theme {
+                    "glass_light" => Color(245, 245, 247, 150),
+                    "sakura_milk" => Color(255, 246, 248, 150),
+                    "peach_matcha" => Color(255, 247, 239, 150),
+                    "cherry_cola" => Color(28, 7, 13, 150),
+                    "midnight_ocean" => Color(6, 16, 30, 150),
+                    _ => Color(10, 10, 11, 150),
                 })
                 .build()
         });

@@ -14,6 +14,7 @@ import { TaskEditor } from "./components/TaskEditor";
 import { DateTimePicker } from "./components/DateTimePicker";
 import { TaskRow } from "./components/TaskRow";
 import { NotesPage } from "./components/NotesPage";
+import { applyGlassAlpha, applyTheme } from "./themes";
 
 const navigation: { key: ViewKey; label: string; icon: IconName }[] = [
   { key: "briefing", label: "Briefing", icon: "spark" },
@@ -124,11 +125,8 @@ function WorkspaceApp() {
   }, [snapshot?.widgetTransparency, snapshot?.appTransparency]);
 
   useEffect(() => {
-    const level = snapshot?.theme === "neumorphic" ? 0 : appTransparency / 40;
+    const level = applyGlassAlpha(appTransparency, snapshot?.theme);
     document.documentElement.style.setProperty("--app-window-opacity", String(1 - level * .55));
-    document.documentElement.style.setProperty("--glass-surface-alpha", String(.94 - level * .36));
-    document.documentElement.style.setProperty("--glass-content-alpha", String(.98 - level * .3));
-    document.documentElement.style.setProperty("--glass-secondary-alpha", String(.88 - level * .32));
   }, [appTransparency, snapshot?.theme]);
 
   useEffect(() => () => {
@@ -169,13 +167,7 @@ function WorkspaceApp() {
     const root = document.documentElement;
     root.dataset.window = "main";
     root.dataset.font = snapshot.fontFamily;
-    if (snapshot.theme === "neumorphic") {
-      root.dataset.theme = "neumorphism";
-      root.dataset.glassVariant = "";
-    } else {
-      root.dataset.theme = "glassmorphism";
-      root.dataset.glassVariant = snapshot.theme === "glass_dark" ? "dark" : "light";
-    }
+    applyTheme(snapshot.theme);
   }, [snapshot?.fontFamily, snapshot?.theme]);
 
   const tasks = snapshot?.tasks ?? [];

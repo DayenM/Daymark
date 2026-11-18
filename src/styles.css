@@ -170,6 +170,37 @@
   --font-body-leading: 1.5;
 }
 
+/* ===== Palettes: one set of 4 tokens per theme; look (light/dark/neu) comes from data-theme/data-glass-variant.
+   Also applied to .theme-swatch so each picker card previews its own colours. */
+:root[data-palette="mono"], .theme-swatch[data-palette="mono"] { --plum: #0A0A0B; --cream: #F5F5F7; --blush: #E5E5EA; --plum-rgb: 10 10 11; --cream-rgb: 245 245 247; --blush-rgb: 229 229 234; --coral-rgb: 10 10 11; --coral: rgb(var(--coral-rgb)); }
+:root[data-palette="mono_dark"], .theme-swatch[data-palette="mono_dark"] { --plum: #0A0A0B; --cream: #F5F5F7; --blush: #E5E5EA; --plum-rgb: 10 10 11; --cream-rgb: 245 245 247; --blush-rgb: 229 229 234; --coral-rgb: 255 255 255; --coral: rgb(var(--coral-rgb)); }
+:root[data-palette="sakura_milk"], .theme-swatch[data-palette="sakura_milk"] { --plum: #4A2B3A; --cream: #FFF6F8; --blush: #FFD9E3; --plum-rgb: 74 43 58; --cream-rgb: 255 246 248; --blush-rgb: 255 217 227; --coral-rgb: 210 77 122; --coral: rgb(var(--coral-rgb)); }
+:root[data-palette="peach_matcha"], .theme-swatch[data-palette="peach_matcha"] { --plum: #34452F; --cream: #FFF7EF; --blush: #FFDCC4; --plum-rgb: 52 69 47; --cream-rgb: 255 247 239; --blush-rgb: 255 220 196; --coral-rgb: 79 127 62; --coral: rgb(var(--coral-rgb)); }
+:root[data-palette="cherry_cola"], .theme-swatch[data-palette="cherry_cola"] { --plum: #1C070D; --cream: #FFF0F4; --blush: #FFB8CB; --plum-rgb: 28 7 13; --cream-rgb: 255 240 244; --blush-rgb: 255 184 203; --coral-rgb: 255 63 128; --coral: rgb(var(--coral-rgb)); }
+:root[data-palette="midnight_ocean"], .theme-swatch[data-palette="midnight_ocean"] { --plum: #06101E; --cream: #EAF4FF; --blush: #A9C8EA; --plum-rgb: 6 16 30; --cream-rgb: 234 244 255; --blush-rgb: 169 200 234; --coral-rgb: 59 212 255; --coral: rgb(var(--coral-rgb)); }
+/* Coloured dark palettes glow with their accent instead of the mono white haze. */
+:root[data-palette="cherry_cola"], :root[data-palette="midnight_ocean"] {
+  --ambient-mesh:
+    radial-gradient(48rem 38rem at 10% 0%, rgb(var(--coral-rgb) / .22), transparent 70%),
+    radial-gradient(44rem 36rem at 92% 20%, rgb(var(--blush-rgb) / .10), transparent 72%),
+    radial-gradient(46rem 38rem at 54% 100%, rgb(var(--coral-rgb) / .08), transparent 74%),
+    var(--plum);
+  --primary-action-bg: var(--coral);
+  --primary-action-ink: var(--plum);
+  --primary-action-hover-bg: var(--blush);
+}
+/* Light pastel palettes: accent glow in the corner, coloured primary button. */
+:root[data-palette="sakura_milk"], :root[data-palette="peach_matcha"] {
+  --ambient-mesh:
+    radial-gradient(46rem 34rem at 12% 6%, rgb(var(--coral-rgb) / .16), transparent 70%),
+    radial-gradient(42rem 34rem at 96% 18%, rgb(var(--blush-rgb) / .8), transparent 70%),
+    radial-gradient(46rem 38rem at 65% 100%, rgb(var(--plum-rgb) / .06), transparent 74%),
+    var(--cream);
+  --primary-action-bg: var(--coral);
+  --primary-action-ink: #fff;
+  --primary-action-hover-bg: var(--plum);
+}
+
 :root[data-font="plus-jakarta-sans"] { --font-ui: "Plus Jakarta Sans Variable", "Segoe UI", sans-serif; --font-display: var(--font-ui); --font-body-weight: 470; --font-display-weight: 750; --font-strong-weight: 660; --font-body-tracking: -.004em; --font-display-tracking: -.032em; --font-body-leading: 1.48; }
 :root[data-font="geist"] { --font-ui: "Geist Variable", "Segoe UI", sans-serif; --font-display: var(--font-ui); --font-body-weight: 465; --font-display-weight: 720; --font-strong-weight: 650; --font-body-tracking: -.006em; --font-display-tracking: -.025em; --font-body-leading: 1.46; }
 :root[data-font="inter"] { --font-ui: "Inter Variable", "Segoe UI", sans-serif; --font-display: var(--font-ui); --font-body-weight: 455; --font-display-weight: 720; --font-strong-weight: 650; --font-body-tracking: -.004em; --font-display-tracking: -.028em; --font-body-leading: 1.48; }
@@ -472,15 +503,15 @@ kbd { min-width: 18px; padding: 2px 4px; border: 1px solid var(--line); border-r
 .theme-swatch i { height: 23px; flex: 1; border: 1px solid rgb(var(--plum-rgb) / .12); border-radius: 5px; background: var(--blush); }
 .theme-swatch i:nth-child(2) { height: 31px; background: var(--plum); }
 .theme-swatch i:nth-child(3) { height: 18px; background: var(--coral); }
-.theme-option-2 .theme-swatch { background: radial-gradient(ellipse at 16% 12%, rgb(var(--coral-rgb) / .45), transparent 68%), radial-gradient(ellipse at 88% 82%, rgb(var(--blush-rgb) / .24), transparent 70%), var(--plum); }
-.theme-option-2 .theme-swatch i { border-color: rgb(var(--cream-rgb) / .36); background: rgb(var(--cream-rgb) / .42); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-.theme-option-2 .theme-swatch i:nth-child(2) { background: rgb(var(--blush-rgb) / .30); }
-.theme-option-2 .theme-swatch i:nth-child(3) { background: rgb(var(--coral-rgb) / .58); }
-.theme-option-2 .theme-preview-icon { color: var(--cream); filter: drop-shadow(0 1px 3px rgb(var(--plum-rgb) / .8)); }
-.theme-option-3 .theme-swatch { background: var(--cream); box-shadow: inset 3px 3px 8px rgb(var(--plum-rgb) / .14), inset -3px -3px 8px rgb(var(--cream-rgb) / .9); }
-.theme-option-3 .theme-swatch i { background: var(--cream); box-shadow: -3px -3px 7px rgb(var(--cream-rgb) / .96), 3px 3px 7px var(--neu-shadow); }
-.theme-option-3 .theme-swatch i:nth-child(2) { background: var(--blush); }
-.theme-option-3 .theme-swatch i:nth-child(3) { background: var(--coral); }
+.theme-look-dark .theme-swatch { background: radial-gradient(ellipse at 16% 12%, rgb(var(--coral-rgb) / .45), transparent 68%), radial-gradient(ellipse at 88% 82%, rgb(var(--blush-rgb) / .24), transparent 70%), var(--plum); }
+.theme-look-dark .theme-swatch i { border-color: rgb(var(--cream-rgb) / .36); background: rgb(var(--cream-rgb) / .42); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.theme-look-dark .theme-swatch i:nth-child(2) { background: rgb(var(--blush-rgb) / .30); }
+.theme-look-dark .theme-swatch i:nth-child(3) { background: rgb(var(--coral-rgb) / .58); }
+.theme-look-dark .theme-preview-icon { color: var(--cream); filter: drop-shadow(0 1px 3px rgb(var(--plum-rgb) / .8)); }
+.theme-look-neu .theme-swatch { background: var(--cream); box-shadow: inset 3px 3px 8px rgb(var(--plum-rgb) / .14), inset -3px -3px 8px rgb(var(--cream-rgb) / .9); }
+.theme-look-neu .theme-swatch i { background: var(--cream); box-shadow: -3px -3px 7px rgb(var(--cream-rgb) / .96), 3px 3px 7px var(--neu-shadow); }
+.theme-look-neu .theme-swatch i:nth-child(2) { background: var(--blush); }
+.theme-look-neu .theme-swatch i:nth-child(3) { background: var(--coral); }
 .theme-selected { position: absolute; right: 11px; bottom: 11px; display: flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 6px; color: var(--plum); background: var(--blush); font-size: 9px; animation: theme-selected-in .22s cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes theme-selected-in { from { opacity: 0; transform: translateY(3px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .appearance-opacity { display: grid; gap: 10px; padding: 12px 13px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--data-surface); }
@@ -786,7 +817,7 @@ kbd { min-width: 18px; padding: 2px 4px; border: 1px solid var(--line); border-r
 [data-theme="neumorphism"] .task-editor .modal-footer,
 [data-theme="neumorphism"] .today-widget-shell,
 [data-theme="neumorphism"] .widget-appearance-popover,
-[data-theme="neumorphism"] .theme-option-2 .theme-swatch i { -webkit-backdrop-filter: none; backdrop-filter: none; }
+[data-theme="neumorphism"] .theme-look-dark .theme-swatch i { -webkit-backdrop-filter: none; backdrop-filter: none; }
 .daymark-icon { flex: 0 0 auto; transition: transform .2s cubic-bezier(.2, .8, .2, 1), color .2s ease, filter .2s ease; }
 button:hover .daymark-icon { transform: translateY(-1px) scale(1.08); }
 button:active .daymark-icon { transform: scale(.94); }

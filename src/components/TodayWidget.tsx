@@ -13,6 +13,7 @@ import { AppearancePicker } from "./AppearancePicker";
 import { PanelCalendar } from "./PanelCalendar";
 import { QuickCapture } from "./QuickCapture";
 import { TaskEditor } from "./TaskEditor";
+import { applyGlassAlpha, applyTheme } from "../themes";
 
 const priorityOrder: Record<Task["priority"], number> = { urgent: 0, high: 1, normal: 2, low: 3 };
 const priorityLabel: Record<Task["priority"], string> = { urgent: "Mendesak", high: "Tinggi", normal: "Normal", low: "Rendah" };
@@ -194,21 +195,17 @@ export function TodayWidget() {
 
   useEffect(() => {
     if (!snapshot) return;
-    setWidgetTransparency(snapshot.widgetTransparency);
+    // Don't overwrite a slider value that is still waiting to be saved.
+    if (transparencySaveTimer.current === null) setWidgetTransparency(snapshot.widgetTransparency);
     const root = document.documentElement;
     root.dataset.font = snapshot.fontFamily;
-    if (snapshot.theme === "neumorphic") {
-      root.dataset.theme = "neumorphism";
-      root.dataset.glassVariant = "";
-    } else {
-      root.dataset.theme = "glassmorphism";
-      root.dataset.glassVariant = snapshot.theme === "glass_dark" ? "dark" : "light";
-    }
+    applyTheme(snapshot.theme);
   }, [snapshot?.fontFamily, snapshot?.theme, snapshot?.widgetTransparency]);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--widget-surface-alpha", String((100 - widgetTransparency) / 100));
-  }, [widgetTransparency]);
+    applyGlassAlpha(widgetTransparency, snapshot?.theme);
+  }, [widgetTransparency, snapshot?.theme]);
 
   useEffect(() => {
     if (!appearanceOpen) return;

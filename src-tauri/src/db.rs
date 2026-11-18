@@ -576,7 +576,16 @@ pub fn save_task_note(connection: &Connection, id: &str, markdown: &str) -> Resu
 }
 
 pub fn set_theme(connection: &Connection, theme: &str) -> Result<(), String> {
-    if !matches!(theme, "glass_light" | "glass_dark" | "neumorphic") {
+    if !matches!(
+        theme,
+        "glass_light"
+            | "glass_dark"
+            | "neumorphic"
+            | "sakura_milk"
+            | "peach_matcha"
+            | "cherry_cola"
+            | "midnight_ocean"
+    ) {
         return Err("Tema tidak dikenal.".into());
     }
     upsert_setting(connection, "theme", theme)
