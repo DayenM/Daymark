@@ -497,7 +497,7 @@ function WorkspaceApp() {
 
           {view === "projects" && snapshot.projects.length === 0 && <section className="empty-project glass-panel"><span className="empty-icon"><Icon name="folder" size={24} /></span><h2>Mulai dari satu project.</h2><p>Kelompokkan tugas yang berjalan bersama.</p><button className="primary-button" onClick={() => setProjectEditorOpen(true)}><Icon name="plus" size={15} /> Buat project</button></section>}
 
-          {view === "calendar" && <CalendarPage tasks={tasks} onToggle={toggleTask} onEdit={setEditingTask} onCreate={(title, due) => createTask(title, due)} />}
+          {view === "calendar" && <CalendarPage tasks={tasks} onEdit={setEditingTask} />}
 
           {view === "notes" && <NotesPage notes={snapshot.quickNotes} onCreate={createQuickNote} onUpdate={updateQuickNote} onDelete={deleteQuickNote} />}
 
