@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Task } from "../types";
-import { calendarGridDays, dayKey, groupTasksByDay, isoWeekNumber, shiftCalendarMonth } from "../calendar";
+import { calendarGridDays, dayKey, groupTasksByDay, shiftCalendarMonth } from "../calendar";
 import { Icon } from "./Icon";
 
 const weekdays = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
@@ -29,18 +29,17 @@ export function PanelCalendar({ tasks, selectedDate, today, onSelectDate, onEdit
   const selectedTasks = tasksByDay.get(selectedKey) ?? [];
   const days = useMemo(() => calendarGridDays(selectedDate), [selectedDate]);
   const monthLabel = selectedDate.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-  const weekdayLabel = selectedDate.toLocaleDateString("id-ID", { weekday: "short" }).replace(/\./g, "");
-  const selectedDateLabel = `${weekdayLabel}, ${selectedDate.getDate()}`;
+  const selectedDateLabel = selectedDate.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" });
+  const openCount = selectedTasks.filter(task => task.status === "open").length;
 
   return (
     <section className="widget-calendar-layout" aria-label="Kalender tugas">
       <div className="widget-calendar-agenda">
         <header className="widget-calendar-day-heading">
           <div>
-            <strong>{selectedDateLabel}</strong>
-            <span>Minggu {String(isoWeekNumber(selectedDate)).padStart(2, "0")}</span>
+            <strong>{selectedKey === today ? `Hari ini · ${selectedDateLabel}` : selectedDateLabel}</strong>
+            <span>{selectedTasks.length ? `${openCount} belum selesai · ${selectedTasks.length - openCount} selesai` : "Tidak ada tugas"}</span>
           </div>
-          <small aria-label={`${selectedTasks.length} tugas pada tanggal terpilih`}>{String(selectedTasks.length).padStart(2, "0")}</small>
         </header>
         {selectedTasks.length === 0 ? (
           <p className="widget-calendar-empty">Belum ada tugas pada tanggal ini.</p>
@@ -48,10 +47,9 @@ export function PanelCalendar({ tasks, selectedDate, today, onSelectDate, onEdit
           <div className="widget-calendar-events" aria-label={`${selectedTasks.length} tugas pada ${selectedDateLabel}`}>
             {selectedTasks.map(task => (
               <article key={task.id} className={`widget-calendar-task priority-${task.priority}${task.status === "done" ? " is-done" : ""}`}>
-                <span className="widget-calendar-task-accent" aria-hidden="true" />
+                <time className="widget-calendar-task-time">{new Date(task.dueAt!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</time>
                 <button className="widget-calendar-task-copy" onClick={() => onEditTask(task)} title={task.title}>
                   <strong>{task.title}</strong>
-                  <span>{new Date(task.dueAt!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
                 </button>
                 <button
                   className="widget-calendar-task-check"
@@ -72,6 +70,7 @@ export function PanelCalendar({ tasks, selectedDate, today, onSelectDate, onEdit
         <header className="widget-calendar-month-heading">
           <strong>{monthLabel}</strong>
           <div>
+            {selectedKey !== today && <button className="widget-calendar-today" onClick={() => onSelectDate(new Date())} title="Kembali ke hari ini">Hari ini</button>}
             <button onClick={() => onSelectDate(shiftCalendarMonth(selectedDate, -1))} aria-label="Bulan sebelumnya" title="Bulan sebelumnya">
               <Icon name="chevron" size={14} className="widget-calendar-chevron previous" />
             </button>

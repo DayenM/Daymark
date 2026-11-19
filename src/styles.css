@@ -1013,3 +1013,29 @@ button:active .daymark-icon { transform: scale(.94); }
 .today-widget-window[data-edge="right"] .widget-notch-ear.left { left: auto; right: 0; bottom: calc(50% + var(--notch-w) / 2); background: radial-gradient(circle at 0 0, transparent calc(var(--notch-ear) - .5px), var(--notch-bg) var(--notch-ear)); }
 .today-widget-window[data-edge="right"] .widget-notch-ear.right { left: auto; right: 0; top: calc(50% + var(--notch-w) / 2); background: radial-gradient(circle at 0 100%, transparent calc(var(--notch-ear) - .5px), var(--notch-bg) var(--notch-ear)); }
 .widget-rest-island { touch-action: none; }
+
+/* ===== Panel calendar: month on top, readable agenda below (default panel view) ===== */
+.today-widget-window .widget-calendar-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.today-widget-window .widget-calendar-month { order: -1; padding: 10px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--data-surface); }
+.today-widget-window .widget-calendar-month-heading > strong { font-size: 13px; }
+.today-widget-window .widget-calendar-month-heading > div { align-items: center; gap: 4px; }
+.today-widget-window .widget-calendar-month-heading button { width: 26px; height: 26px; }
+.today-widget-window .widget-calendar-month-heading .widget-calendar-today { width: auto; padding: 0 9px; font-size: 10px; font-weight: 700; }
+.today-widget-window .widget-calendar-weekdays { font-size: 9.5px; }
+.today-widget-window .widget-calendar-days { grid-auto-rows: 32px; gap: 3px; }
+.today-widget-window .widget-calendar-day { justify-self: center; width: 32px; height: 32px; font-size: 12px; }
+.today-widget-window .widget-calendar-day.today:not(.selected) { color: var(--coral); font-weight: 800; }
+.today-widget-window .widget-calendar-day.selected { color: var(--primary-action-ink); background: var(--primary-action-bg); }
+.today-widget-window .widget-calendar-day.selected > i { background: var(--primary-action-ink); }
+.today-widget-window .widget-calendar-day > i { bottom: 3px; width: 4px; height: 4px; }
+.today-widget-window .widget-calendar-day-heading { margin-bottom: 8px; }
+.today-widget-window .widget-calendar-day-heading strong { font-size: 14px; white-space: normal; text-transform: capitalize; }
+.today-widget-window .widget-calendar-day-heading > div > span { font-size: 11px; }
+.today-widget-window .widget-calendar-events { gap: 6px; }
+.today-widget-window .widget-calendar-task { min-height: 0; grid-template-columns: 44px minmax(0, 1fr) 24px; gap: 9px; padding: 9px 10px; border-left: 3px solid var(--line); border-radius: 10px; }
+.today-widget-window .widget-calendar-task.priority-high { border-left-color: rgb(var(--coral-rgb) / .55); }
+.today-widget-window .widget-calendar-task.priority-urgent { border-left-color: var(--coral); }
+.today-widget-window .widget-calendar-task-time { color: var(--text-primary); font-size: 12px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.today-widget-window .widget-calendar-task-copy strong { display: -webkit-box; overflow: hidden; font-size: 12.5px; font-weight: 600; line-height: 1.35; white-space: normal; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.today-widget-window .widget-calendar-task-check { width: 24px; height: 24px; border-radius: 50%; }
+.today-widget-window .widget-calendar-empty { padding: 12px; font-size: 12px; text-align: center; }

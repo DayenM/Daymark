@@ -52,7 +52,7 @@ export function TodayWidget() {
   const [updateError, setUpdateError] = useState("");
   const [pinned, setPinned] = useState(true);
   const [positionFrozen, setPositionFrozen] = useState(false);
-  const [panelMode, setPanelMode] = useState<PanelMode>("todo");
+  const [panelMode, setPanelMode] = useState<PanelMode>("calendar");
   const [islandOpen, setIslandOpenState] = useState(false);
   const [islandClosing, setIslandClosing] = useState(false);
   const [dockEdge, setDockEdge] = useState<DockEdge>("top");
@@ -70,7 +70,7 @@ export function TodayWidget() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const expandedSize = useRef<{ width: number; height: number } | null>(null);
   const focusSize = useRef<{ width: number; height: number } | null>(null);
-  const currentMode = useRef<PanelMode>("todo");
+  const currentMode = useRef<PanelMode>("calendar");
   const islandOpenRef = useRef(false);
   const islandClosingRef = useRef(false);
   const closeSequence = useRef(0);
@@ -165,7 +165,9 @@ export function TodayWidget() {
       };
     }
     void refresh();
-    void invoke<[DockEdge, number]>("get_island_dock").then(([edge]) => applyDockEdge(edge)).catch(() => undefined);
+    // After Windows sign-in, greet the user with the calendar already open.
+    void invoke<[DockEdge, number]>("get_island_dock").then(([edge]) => applyDockEdge(edge)).catch(() => undefined)
+      .then(() => invoke<boolean>("launched_at_startup")).then(atStartup => { if (atStartup) void setIslandOpen(true); }).catch(() => undefined);
     void panelWindow?.isAlwaysOnTop().then(setPinned).catch(() => setPinned(true));
     let unlisten: (() => void)[] = [];
     let active = true;
@@ -182,7 +184,7 @@ export function TodayWidget() {
         if (islandOpenRef.current) void setIslandOpen(false);
         else void panelWindow?.hide();
       }),
-      listen("briefing-needed", () => void changePanelMode("todo")),
+      listen("briefing-needed", () => void changePanelMode("calendar")),
       listen("update-check-requested", () => void checkForUpdates(true)),
     ]).then(stops => {
       if (active) unlisten = stops;

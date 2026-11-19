@@ -40,6 +40,7 @@ pub fn run() {
             commands::open_today_widget,
             commands::reset_today_widget_position,
             commands::get_island_dock,
+            commands::launched_at_startup,
             commands::set_island_dock,
             commands::create_task,
             commands::update_task,
