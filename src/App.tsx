@@ -92,6 +92,7 @@ function WorkspaceApp() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [view, setView] = useState<ViewKey>("calendar");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
@@ -149,7 +150,7 @@ function WorkspaceApp() {
       // Window-scoped: the hotkey targets only the window the user is looking at.
       getCurrentWindow().listen("quick-capture", () => setQuickCaptureOpen(true)),
       listen("briefing-needed", () => {
-        setView("briefing");
+        openView("briefing");
         void refresh().catch(value => setError(errorMessage(value)));
       }),
       listen("workspace-mutated", () => {
@@ -235,7 +236,7 @@ function WorkspaceApp() {
 
   async function createQuickCapture(title: string) {
     await createTask(title);
-    setView("inbox");
+    openView("inbox");
   }
 
   async function createProject(event: FormEvent) {
@@ -255,7 +256,7 @@ function WorkspaceApp() {
       await invoke("delete_project", { id: project.id });
       setProjectFilter(null);
       setTaskProject(current => current === project.id ? "" : current);
-      setView("today");
+      openView("today");
       setNotice("Project dihapus. Tugasnya tetap tersimpan tanpa project.");
     });
   }
@@ -317,7 +318,7 @@ function WorkspaceApp() {
     try {
       await invoke("acknowledge_briefing");
       await refresh();
-      setView("today");
+      openView("today");
     } catch (value) {
       setError(errorMessage(value));
     }
@@ -387,10 +388,17 @@ function WorkspaceApp() {
         : view === "projects" ? topLevel(openTasks.filter(task => task.projectId === projectFilter))
           : [];
 
+  function openView(next: ViewKey) {
+    setView(next);
+    // The calendar gets the full width; other pages bring the sidebar back.
+    setSidebarCollapsed(next === "calendar");
+  }
+
   return (
     <div className="window-frame">
       <header className="titlebar" data-tauri-drag-region>
         <div className="brand-lockup" data-tauri-drag-region>
+          <button className="sidebar-toggle" onClick={() => setSidebarCollapsed(value => !value)} aria-expanded={!sidebarCollapsed} aria-controls="app-sidebar" aria-label={sidebarCollapsed ? "Buka sidebar" : "Tutup sidebar"} title={sidebarCollapsed ? "Buka sidebar" : "Tutup sidebar"}><Icon name="menu" size={17} /></button>
           <span className="brand-mark"><Icon name="sun" size={17} /></span>
           <span className="brand-name">daymark</span>
           <span className="brand-divider" />
@@ -405,13 +413,13 @@ function WorkspaceApp() {
         </div>
       </header>
 
-      <div className="app-layout">
-        <aside className="sidebar">
+      <div className={`app-layout${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+        <aside className="sidebar" id="app-sidebar">
           <div className="sidebar-section">
             <p className="sidebar-label">Ruang pribadi</p>
             <nav className="main-nav" aria-label="Navigasi utama">
               {navigation.map(item => (
-                <button key={item.key} className={`nav-item ${view === item.key ? "active" : ""}`} onClick={() => { setView(item.key); setProjectFilter(null); }}>
+                <button key={item.key} className={`nav-item ${view === item.key ? "active" : ""}`} title={item.label} onClick={() => { openView(item.key); setProjectFilter(null); }}>
                   <Icon name={item.icon} size={17} /><span>{item.label}</span>
                   {item.key === "briefing" && !snapshot.briefingAcknowledged && <span className="nav-count urgent-count">●</span>}
                   {item.key === "today" && overdueTasks.length > 0 && <span className="nav-count urgent-count">{overdueTasks.length}</span>}
@@ -424,17 +432,17 @@ function WorkspaceApp() {
           <div className="sidebar-section project-nav-section">
             <div className="sidebar-label-row"><p className="sidebar-label">Projects</p><button className="small-icon-button" onClick={() => setProjectEditorOpen(true)} aria-label="Buat project"><Icon name="plus" size={15} /></button></div>
             {snapshot.projects.length === 0 ? <p className="sidebar-empty">Project membantu tugas tetap terarah.</p> : <nav className="project-nav" aria-label="Projects">
-              {snapshot.projects.map(project => <button className={`nav-item project-nav-item ${view === "projects" && projectFilter === project.id ? "active" : ""}`} key={project.id} onClick={() => { setView("projects"); setProjectFilter(project.id); }}><span className="project-dot" style={{ background: project.color }} /><span>{project.name}</span></button>)}
+              {snapshot.projects.map(project => <button className={`nav-item project-nav-item ${view === "projects" && projectFilter === project.id ? "active" : ""}`} key={project.id} title={project.name} onClick={() => { openView("projects"); setProjectFilter(project.id); }}><span className="project-dot" style={{ background: project.color }} /><span>{project.name}</span></button>)}
             </nav>}
           </div>
 
           <div className="sidebar-bottom">
-            <button className={`nav-item ${view === "settings" ? "active" : ""}`} onClick={() => setView("settings")}><Icon name="settings" size={17} /><span>Pengaturan</span></button>
+            <button className={`nav-item ${view === "settings" ? "active" : ""}`} title="Pengaturan" onClick={() => openView("settings")}><Icon name="settings" size={17} /><span>Pengaturan</span></button>
             <div className="local-badge"><span className="local-dot" /> Disimpan di perangkat ini</div>
           </div>
         </aside>
 
-        <main className="main-content">
+        <main className={`main-content${view === "calendar" ? " is-calendar" : ""}`}>
           <div className="page-topline">
             <div><p className="date-line">{readableDate()}</p><h1><span className="page-title-icon"><Icon name={pageIcon} size={18} /></span>{view === "today" ? `${greeting()}, Dayen` : pageTitle}</h1></div>
             <div className="page-top-actions">{currentProject && view === "projects" && <button className="text-button delete-project-button" onClick={() => void deleteProject(currentProject)}><Icon name="trash" size={15} /> Hapus project</button>}<span className="task-total">{openTasks.length} tugas aktif</span></div>
@@ -455,10 +463,10 @@ function WorkspaceApp() {
                 <div><strong>{pinnedNotes.length.toString().padStart(2, "0")}</strong><span>catatan tersemat</span></div>
                 <div className="briefing-buttons">
                   {overdueTasks.length > 0 && <button className="soft-button" onClick={() => void rolloverAll()}>Pindahkan ke hari ini</button>}
-                  {snapshot.briefingAcknowledged ? <button className="primary-button" onClick={() => setView("today")}>Buka Hari ini <Icon name="arrow" size={15} /></button> : <><button className="text-button" onClick={() => void snoozeBriefing()}>Ingatkan 15 menit lagi</button><button className="primary-button" onClick={() => void acknowledgeBriefing()}>Mulai fokus <Icon name="arrow" size={15} /></button></>}
+                  {snapshot.briefingAcknowledged ? <button className="primary-button" onClick={() => openView("today")}>Buka Hari ini <Icon name="arrow" size={15} /></button> : <><button className="text-button" onClick={() => void snoozeBriefing()}>Ingatkan 15 menit lagi</button><button className="primary-button" onClick={() => void acknowledgeBriefing()}>Mulai fokus <Icon name="arrow" size={15} /></button></>}
                 </div>
               </div>
-              {pinnedNotes.length > 0 && <div className="briefing-notes"><span className="briefing-notes-label"><Icon name="pin" size={14} /> Catatan penting</span>{pinnedNotes.slice(0, 2).map(note => <button key={note.id} className="briefing-note" onClick={() => setView("notes")}><strong>{note.title}</strong><span>{note.content || "Belum ada isi"}</span></button>)}</div>}
+              {pinnedNotes.length > 0 && <div className="briefing-notes"><span className="briefing-notes-label"><Icon name="pin" size={14} /> Catatan penting</span>{pinnedNotes.slice(0, 2).map(note => <button key={note.id} className="briefing-note" onClick={() => openView("notes")}><strong>{note.title}</strong><span>{note.content || "Belum ada isi"}</span></button>)}</div>}
             </section>
           )}
 

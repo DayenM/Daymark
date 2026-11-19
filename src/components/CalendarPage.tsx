@@ -4,13 +4,18 @@ import { calendarGridDays, dayKey, groupTasksByDay, shiftCalendarMonth } from ".
 import { Icon } from "./Icon";
 
 const weekdays = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
-const SCALES = [.85, 1, 1.15, 1.3];
+const MIN_SCALE = .6;
+const MAX_SCALE = 1.8;
 const SCALE_KEY = "daymark.calendarScale";
+
+function clampScale(value: number) {
+  return Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, value)) * 100) / 100;
+}
 
 function savedScale() {
   try {
     const value = Number(localStorage.getItem(SCALE_KEY));
-    return SCALES.includes(value) ? value : 1;
+    return value ? clampScale(value) : 1;
   } catch {
     return 1;
   }
@@ -31,10 +36,9 @@ export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: 
   const today = dayKey(new Date());
   const [month, setMonth] = useState(() => new Date());
   const [scale, setScale] = useState(savedScale);
-  const step = SCALES.indexOf(scale);
 
-  function changeScale(offset: number) {
-    const next = SCALES[Math.min(SCALES.length - 1, Math.max(0, step + offset))];
+  function changeScale(value: number) {
+    const next = clampScale(value);
     setScale(next);
     try { localStorage.setItem(SCALE_KEY, String(next)); } catch { /* size is only a convenience */ }
   }
@@ -49,11 +53,12 @@ export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: 
       <header className="calendar-board-header">
         <h2>{monthLabel}</h2>
         <div className="calendar-board-nav">
-          <div className="calendar-zoom" role="group" aria-label="Ukuran tampilan kalender" title="Ukuran tampilan kalender: perkecil untuk melihat lebih banyak, perbesar agar tulisan lebih mudah dibaca">
+          <div className="calendar-zoom" role="group" aria-label="Ukuran tampilan kalender" title="Ukuran tampilan kalender: geser bebas, perkecil untuk melihat lebih banyak, perbesar agar tulisan lebih mudah dibaca">
             <span className="calendar-zoom-label">Ukuran</span>
-            <button className="icon-button" onClick={() => changeScale(-1)} disabled={step === 0} aria-label="Perkecil kalender" title="Perkecil kalender">−</button>
-            <output aria-live="polite">{Math.round(scale * 100)}%</output>
-            <button className="icon-button" onClick={() => changeScale(1)} disabled={step === SCALES.length - 1} aria-label="Perbesar kalender" title="Perbesar kalender">+</button>
+            <button className="icon-button" onClick={() => changeScale(scale - .05)} disabled={scale <= MIN_SCALE} aria-label="Perkecil kalender" title="Perkecil kalender">−</button>
+            <input type="range" min={MIN_SCALE} max={MAX_SCALE} step=".01" value={scale} onChange={event => changeScale(Number(event.target.value))} aria-label="Geser untuk mengatur ukuran kalender" aria-valuetext={`${Math.round(scale * 100)} persen`} />
+            <button className="icon-button" onClick={() => changeScale(scale + .05)} disabled={scale >= MAX_SCALE} aria-label="Perbesar kalender" title="Perbesar kalender">+</button>
+            <button className="calendar-zoom-value" onClick={() => changeScale(1)} title="Klik untuk kembali ke ukuran normal (100%)" aria-label={`Ukuran ${Math.round(scale * 100)} persen, klik untuk reset`}>{Math.round(scale * 100)}%</button>
           </div>
           <button className="soft-button" onClick={() => setMonth(new Date())}>Hari ini</button>
           <button className="icon-button" onClick={() => setMonth(value => shiftCalendarMonth(value, -1))} aria-label="Bulan sebelumnya"><span className="flip"><Icon name="chevron" size={16} /></span></button>
