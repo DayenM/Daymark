@@ -358,3 +358,14 @@ fn local_date_helper_resolves_a_valid_local_time() {
     let resolved = resolve_local(date.and_hms_opt(9, 0, 0).unwrap()).unwrap();
     assert_eq!(resolved.date_naive(), date);
 }
+
+#[test]
+fn island_dock_defaults_to_top_centre_and_rejects_bad_values() {
+    let db = TestDb::new();
+    assert_eq!(island_dock(db.connection()).unwrap(), ("top".into(), 0.5));
+    set_island_dock(db.connection(), "left", 0.25).unwrap();
+    assert_eq!(island_dock(db.connection()).unwrap(), ("left".into(), 0.25));
+    assert!(set_island_dock(db.connection(), "bottom", 0.5).is_err());
+    assert!(set_island_dock(db.connection(), "right", 1.5).is_err());
+    assert!(parse_island_dock("top:abc").is_none());
+}

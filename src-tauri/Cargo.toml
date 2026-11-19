@@ -1,6 +1,6 @@
 [package]
 name = "daymark-workspace"
-version = "0.1.11"
+version = "0.1.12"
 description = "Local-first daily task workspace"
 authors = ["Daymark"]
 edition = "2021"

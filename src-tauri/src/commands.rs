@@ -27,11 +27,28 @@ pub fn open_today_widget(app: AppHandle) {
 }
 
 #[tauri::command]
-pub fn reset_today_widget_position(app: AppHandle) -> Result<(), String> {
+pub fn reset_today_widget_position(app: AppHandle, state: State<'_, DbState>) -> Result<(), String> {
     let window = app
         .get_webview_window("today-widget")
         .ok_or_else(|| "Panel Daymark tidak tersedia.".to_owned())?;
-    crate::scheduler::position_widget(&window)
+    let (edge, ratio) = with_connection(&state, |connection| db::island_dock(connection))?;
+    crate::scheduler::place_island(&window, &edge, ratio)
+}
+
+#[tauri::command]
+pub fn get_island_dock(state: State<'_, DbState>) -> Result<(String, f64), String> {
+    with_connection(&state, |connection| db::island_dock(connection))
+}
+
+#[tauri::command]
+pub fn set_island_dock(
+    app: AppHandle,
+    state: State<'_, DbState>,
+    edge: String,
+    ratio: f64,
+) -> Result<(), String> {
+    with_connection(&state, |connection| db::set_island_dock(connection, &edge, ratio))?;
+    reset_today_widget_position(app, state)
 }
 
 fn with_connection<T>(

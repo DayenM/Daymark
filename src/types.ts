@@ -1,7 +1,7 @@
 export type Theme = "glass_light" | "glass_dark" | "neumorphic" | "sakura_milk" | "peach_matcha" | "cherry_cola" | "midnight_ocean";
 export type FontFamily = "plus-jakarta-sans" | "geist" | "inter" | "atkinson-hyperlegible-next" | "segoe-ui" | "aptos" | "arial";
 export type Priority = "low" | "normal" | "high" | "urgent";
-export type ViewKey = "briefing" | "today" | "upcoming" | "inbox" | "projects" | "notes" | "settings";
+export type ViewKey = "calendar" | "briefing" | "today" | "upcoming" | "inbox" | "projects" | "notes" | "settings";
 
 export type Task = {
   id: string;

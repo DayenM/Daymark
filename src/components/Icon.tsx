@@ -4,7 +4,7 @@ export type IconName =
   | "sun" | "calendar" | "inbox" | "folder" | "note" | "settings"
   | "plus" | "chevron" | "check" | "close" | "search" | "pin"
   | "clock" | "repeat" | "arrow" | "trash" | "spark" | "menu"
-  | "palette" | "eye" | "moon" | "layers" | "target";
+  | "palette" | "eye" | "moon" | "layers" | "target" | "lock" | "unlock";
 
 const paths: Record<IconName, ReactNode> = {
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></>,
@@ -29,6 +29,8 @@ const paths: Record<IconName, ReactNode> = {
   eye: <><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.6" /></>,
   moon: <path d="M20.6 14.1A8.4 8.4 0 0 1 9.9 3.4 8.8 8.8 0 1 0 20.6 14.1Z" />,
   layers: <><path d="m12 3 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5M3 16l9 5 9-5" /></>,
+  lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  unlock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.6-1.7" /></>,
   target: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></>,
 };
 

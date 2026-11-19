@@ -9,7 +9,9 @@ use std::{
 };
 
 use rusqlite::Connection;
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewWindow, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, WebviewWindow, WebviewWindowBuilder,
+};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::{commands::DbState, db};
@@ -170,7 +172,14 @@ pub fn show_main(app: &AppHandle) -> Result<(), String> {
 pub fn show_today_widget(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("today-widget") {
         if !WIDGET_PLACED.swap(true, Ordering::Relaxed) {
-            let _ = position_widget(&window);
+            let dock = app
+                .state::<DbState>()
+                .0
+                .lock()
+                .ok()
+                .and_then(|connection| db::island_dock(&connection).ok())
+                .unwrap_or_else(|| ("top".into(), 0.5));
+            let _ = place_island(&window, &dock.0, dock.1);
         }
         let _ = window.unminimize();
         let _ = window.show();
@@ -178,21 +187,38 @@ pub fn show_today_widget(app: &AppHandle) {
     }
 }
 
-pub fn position_widget(window: &WebviewWindow) -> Result<(), String> {
-    let monitor = window
-        .primary_monitor()
-        .map_err(|error| error.to_string())?
-        .ok_or_else(|| "Monitor utama tidak tersedia.".to_owned())?;
-    let size = window.outer_size().map_err(|error| error.to_string())?;
-    let monitor_position = monitor.position();
-    let monitor_size = monitor.size();
-    let centered_offset = (monitor_size.width as i32 - size.width as i32) / 2;
+/// Sizes the collapsed island for its edge and glues it flush to that edge of the monitor it is on.
+pub fn place_island(window: &WebviewWindow, edge: &str, ratio: f64) -> Result<(), String> {
+    let monitor = match window.current_monitor().map_err(|error| error.to_string())? {
+        Some(monitor) => monitor,
+        None => window
+            .primary_monitor()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "Monitor utama tidak tersedia.".to_owned())?,
+    };
+    // Notch 210×32 + 10px concave ears each side + room for its shadow; rotated on side edges.
+    let (width, height) = if edge == "top" { (230.0, 40.0) } else { (40.0, 230.0) };
     window
-        .set_position(PhysicalPosition::new(
-        monitor_position.x + centered_offset,
-        // Flush with the top edge so the island reads as a notch.
-        monitor_position.y,
-        ))
+        .set_min_size(Some(LogicalSize::new(30.0, 30.0)))
+        .map_err(|error| error.to_string())?;
+    window
+        .set_size(LogicalSize::new(width, height))
+        .map_err(|error| error.to_string())?;
+    let scale = monitor.scale_factor();
+    let (outer_w, outer_h) = ((width * scale).round() as i32, (height * scale).round() as i32);
+    let origin = monitor.position();
+    let size = monitor.size();
+    let (screen_w, screen_h) = (size.width as i32, size.height as i32);
+    let ratio = ratio.clamp(0.0, 1.0);
+    let along_x = ((screen_w as f64 * ratio) as i32 - outer_w / 2).clamp(0, (screen_w - outer_w).max(0));
+    let along_y = ((screen_h as f64 * ratio) as i32 - outer_h / 2).clamp(0, (screen_h - outer_h).max(0));
+    let (x, y) = match edge {
+        "left" => (origin.x, origin.y + along_y),
+        "right" => (origin.x + screen_w - outer_w, origin.y + along_y),
+        _ => (origin.x + along_x, origin.y),
+    };
+    window
+        .set_position(PhysicalPosition::new(x, y))
         .map_err(|error| error.to_string())
 }
 

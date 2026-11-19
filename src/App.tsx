@@ -14,12 +14,14 @@ import { TaskEditor } from "./components/TaskEditor";
 import { DateTimePicker } from "./components/DateTimePicker";
 import { TaskRow } from "./components/TaskRow";
 import { NotesPage } from "./components/NotesPage";
+import { CalendarPage } from "./components/CalendarPage";
 import { applyGlassAlpha, applyTheme } from "./themes";
 
 const navigation: { key: ViewKey; label: string; icon: IconName }[] = [
+  { key: "calendar", label: "Kalender", icon: "calendar" },
   { key: "briefing", label: "Briefing", icon: "spark" },
   { key: "today", label: "Hari ini", icon: "sun" },
-  { key: "upcoming", label: "Mendatang", icon: "calendar" },
+  { key: "upcoming", label: "Mendatang", icon: "clock" },
   { key: "inbox", label: "Inbox", icon: "inbox" },
   { key: "projects", label: "Projects", icon: "folder" },
   { key: "notes", label: "Catatan", icon: "note" },
@@ -89,7 +91,7 @@ function WorkspaceApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [view, setView] = useState<ViewKey>("today");
+  const [view, setView] = useState<ViewKey>("calendar");
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
@@ -377,7 +379,7 @@ function WorkspaceApp() {
   if (!snapshot) return <div className="startup-state"><span className="brand-mark"><Icon name="sun" /></span><h1>Daymark belum dapat dibuka</h1><p>{error || "Database lokal tidak merespons."}</p><button className="primary-button" onClick={() => { setLoading(true); void refresh().catch(value => { setError(errorMessage(value)); setLoading(false); }); }}>Coba lagi</button></div>;
 
   const currentProject = snapshot.projects.find(project => project.id === projectFilter);
-  const pageTitle = view === "projects" && currentProject ? currentProject.name : ({ briefing: "Morning Briefing", today: "Hari ini", upcoming: "Mendatang", inbox: "Inbox", projects: "Projects", notes: "Catatan", settings: "Pengaturan" } satisfies Record<ViewKey, string>)[view];
+  const pageTitle = view === "projects" && currentProject ? currentProject.name : ({ calendar: "Kalender", briefing: "Morning Briefing", today: "Hari ini", upcoming: "Mendatang", inbox: "Inbox", projects: "Projects", notes: "Catatan", settings: "Pengaturan" } satisfies Record<ViewKey, string>)[view];
   const pageIcon = view === "settings" ? "settings" : navigation.find(item => item.key === view)?.icon ?? "folder";
   const rootTasks = view === "today" ? topLevel([...overdueTasks, ...todayTasks, ...unscheduledTasks])
     : view === "upcoming" ? topLevel(upcomingTasks)
@@ -494,6 +496,8 @@ function WorkspaceApp() {
           )}
 
           {view === "projects" && snapshot.projects.length === 0 && <section className="empty-project glass-panel"><span className="empty-icon"><Icon name="folder" size={24} /></span><h2>Mulai dari satu project.</h2><p>Kelompokkan tugas yang berjalan bersama.</p><button className="primary-button" onClick={() => setProjectEditorOpen(true)}><Icon name="plus" size={15} /> Buat project</button></section>}
+
+          {view === "calendar" && <CalendarPage tasks={tasks} onToggle={toggleTask} onEdit={setEditingTask} onCreate={(title, due) => createTask(title, due)} />}
 
           {view === "notes" && <NotesPage notes={snapshot.quickNotes} onCreate={createQuickNote} onUpdate={updateQuickNote} onDelete={deleteQuickNote} />}
 

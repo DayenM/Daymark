@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { PhysicalPosition } from "@tauri-apps/api/dpi";
-import { getCurrentWindow, LogicalPosition, LogicalSize } from "@tauri-apps/api/window";
+import { currentMonitor, getCurrentWindow, LogicalPosition, LogicalSize } from "@tauri-apps/api/window";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
@@ -25,8 +25,7 @@ const panelChoices: PanelChoice[] = [
   { mode: "calendar", label: "Kalender", icon: "calendar" },
   { mode: "rest", label: "Istirahat", icon: "moon" },
 ];
-// Notch (210×32) + 10px concave ears each side + room for its drop shadow.
-const ISLAND_SIZE = { width: 230, height: 40 };
+type DockEdge = "top" | "left" | "right";
 const DEFAULT_WIDGET_SIZE = { width: 400, height: 620 };
 const FOCUS_WIDGET_SIZE = { width: 390, height: 184 };
 
@@ -56,6 +55,11 @@ export function TodayWidget() {
   const [panelMode, setPanelMode] = useState<PanelMode>("todo");
   const [islandOpen, setIslandOpenState] = useState(false);
   const [islandClosing, setIslandClosing] = useState(false);
+  const [dockEdge, setDockEdge] = useState<DockEdge>("top");
+  const dockEdgeRef = useRef<DockEdge>("top");
+  const islandDrag = useRef<{ pointerId: number; startX: number; startY: number; position: PhysicalPosition | null; scale: number; moved: boolean } | null>(null);
+  const suppressIslandClick = useRef(false);
+  const islandClickTimer = useRef<number | null>(null);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [widgetTransparency, setWidgetTransparency] = useState(0);
@@ -161,6 +165,7 @@ export function TodayWidget() {
       };
     }
     void refresh();
+    void invoke<[DockEdge, number]>("get_island_dock").then(([edge]) => applyDockEdge(edge)).catch(() => undefined);
     void panelWindow?.isAlwaysOnTop().then(setPinned).catch(() => setPinned(true));
     let unlisten: (() => void)[] = [];
     let active = true;
@@ -236,6 +241,7 @@ export function TodayWidget() {
 
   useEffect(() => () => {
     if (transparencySaveTimer.current !== null) window.clearTimeout(transparencySaveTimer.current);
+    if (islandClickTimer.current !== null) window.clearTimeout(islandClickTimer.current);
   }, []);
 
   useEffect(() => {
@@ -265,19 +271,101 @@ export function TodayWidget() {
 
   async function resizeWidget(size: { width: number; height: number }, minimum: LogicalSize) {
     if (!panelWindow) return true;
-    const scale = await panelWindow.scaleFactor();
-    const position = await panelWindow.outerPosition();
-    const currentSize = await panelWindow.outerSize();
-    const centerX = (position.x + currentSize.width / 2) / scale;
-    const top = position.y / scale;
+    const [scale, position, currentSize, monitor] = await Promise.all([panelWindow.scaleFactor(), panelWindow.outerPosition(), panelWindow.outerSize(), currentMonitor()]);
+    const edge = dockEdgeRef.current;
+    const left = position.x / scale, top = position.y / scale;
+    const width = currentSize.width / scale, height = currentSize.height / scale;
+    // Grow away from the edge the island is docked to, then keep the panel on screen.
+    let x = edge === "left" ? left : edge === "right" ? left + width - size.width : left + width / 2 - size.width / 2;
+    let y = edge === "top" ? top : top + height / 2 - size.height / 2;
+    if (monitor) {
+      const mx = monitor.position.x / scale, my = monitor.position.y / scale;
+      x = Math.min(Math.max(x, mx), mx + monitor.size.width / scale - size.width);
+      y = Math.min(Math.max(y, my), my + monitor.size.height / scale - size.height);
+    }
     await panelWindow.setMinSize(minimum);
     await panelWindow.setSize(new LogicalSize(size.width, size.height));
+    await panelWindow.setPosition(new LogicalPosition(x, y));
+    return true;
+  }
+
+  function applyDockEdge(edge: DockEdge) {
+    dockEdgeRef.current = edge;
+    setDockEdge(edge);
+  }
+
+  async function dockIsland(edge: DockEdge, ratio: number) {
     try {
-      await panelWindow.setPosition(new LogicalPosition(centerX - size.width / 2, top));
-      return true;
+      await invoke("set_island_dock", { edge, ratio });
+      applyDockEdge(edge);
     } catch (value) {
-      throw value;
+      setError(errorMessage(value));
     }
+  }
+
+  async function startIslandDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (!panelWindow || positionFrozen || event.button !== 0 || islandOpenRef.current) return;
+    const origin = { pointerId: event.pointerId, startX: event.screenX, startY: event.screenY, position: null as PhysicalPosition | null, scale: 1, moved: false };
+    islandDrag.current = origin;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const [position, scale] = await Promise.all([panelWindow.outerPosition(), panelWindow.scaleFactor()]);
+    if (islandDrag.current === origin) {
+      origin.position = position;
+      origin.scale = scale;
+    }
+  }
+
+  function moveIslandDrag(event: ReactPointerEvent<HTMLElement>) {
+    const origin = islandDrag.current;
+    if (!panelWindow || !origin?.position || origin.pointerId !== event.pointerId) return;
+    const dx = event.screenX - origin.startX, dy = event.screenY - origin.startY;
+    if (!origin.moved && Math.hypot(dx, dy) < 5) return;
+    origin.moved = true;
+    void panelWindow.setPosition(new PhysicalPosition(origin.position.x + Math.round(dx * origin.scale), origin.position.y + Math.round(dy * origin.scale))).catch(value => setError(errorMessage(value)));
+  }
+
+  async function endIslandDrag(event: ReactPointerEvent<HTMLElement>) {
+    const origin = islandDrag.current;
+    if (!origin || origin.pointerId !== event.pointerId) return;
+    islandDrag.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!origin.moved || !panelWindow) return;
+    suppressIslandClick.current = true;
+    try {
+      const [position, size, monitor] = await Promise.all([panelWindow.outerPosition(), panelWindow.outerSize(), currentMonitor()]);
+      if (!monitor) return;
+      const cx = position.x + size.width / 2 - monitor.position.x;
+      const cy = position.y + size.height / 2 - monitor.position.y;
+      // Snap to the closest of top / left / right; the bottom edge belongs to the taskbar.
+      const distance: Record<DockEdge, number> = { top: cy, left: cx, right: monitor.size.width - cx };
+      const edge = (Object.keys(distance) as DockEdge[]).reduce((best, next) => distance[next] < distance[best] ? next : best);
+      const ratio = Math.min(1, Math.max(0, edge === "top" ? cx / monitor.size.width : cy / monitor.size.height));
+      await dockIsland(edge, ratio);
+    } catch (value) {
+      setError(errorMessage(value));
+    }
+  }
+
+  function clickIsland(event: ReactMouseEvent<HTMLButtonElement>) {
+    if (suppressIslandClick.current) {
+      suppressIslandClick.current = false;
+      return;
+    }
+    if (islandClickTimer.current !== null) window.clearTimeout(islandClickTimer.current);
+    islandClickTimer.current = null;
+    if (event.detail === 0) {
+      void setIslandOpen(true);
+      return;
+    }
+    if (event.detail >= 3) {
+      void dockIsland("top", .5);
+      return;
+    }
+    // Wait a beat so a triple click recenters without opening the panel first.
+    islandClickTimer.current = window.setTimeout(() => {
+      islandClickTimer.current = null;
+      void setIslandOpen(true);
+    }, 280);
   }
 
   async function setIslandOpen(next: boolean) {
@@ -323,7 +411,7 @@ export function TodayWidget() {
       setClock(new Date());
       if (mode !== "focus" && size === DEFAULT_WIDGET_SIZE) expandedSize.current = null;
     } catch (value) {
-      await panelWindow.setMinSize(new LogicalSize(180, 30)).catch(() => undefined);
+      await panelWindow.setMinSize(new LogicalSize(30, 30)).catch(() => undefined);
       await panelWindow.setSize(new LogicalSize(previousSize.width, previousSize.height)).catch(() => undefined);
       setError(errorMessage(value));
     } finally {
@@ -347,7 +435,8 @@ export function TodayWidget() {
     if (mode === "focus") focusSize.current = previousSize;
     else expandedSize.current = previousSize;
     try {
-      await resizeWidget(ISLAND_SIZE, new LogicalSize(180, 30));
+      // Rust sizes the collapsed island for its docked edge and glues it there.
+      await invoke("reset_today_widget_position");
       if (wasCancelled()) {
         await restoreCancelledClose();
         return;
@@ -782,13 +871,13 @@ export function TodayWidget() {
   }
 
   return (
-    <div className={`today-widget-window${islandOpen && !islandClosing ? " island-expanded" : ""}`}>
+    <div className={`today-widget-window${islandOpen && !islandClosing ? " island-expanded" : ""}`} data-edge={dockEdge}>
       <i className="widget-notch-ear left" aria-hidden="true" />
       <i className="widget-notch-ear right" aria-hidden="true" />
       <section className={`today-widget-shell${islandOpen ? " widget-shell-expanded" : ""}${islandClosing ? " widget-shell-closing" : ""}`} onTransitionEnd={event => {
         if (event.target === event.currentTarget && event.propertyName === "height" && islandClosingRef.current) void finishIslandClose();
       }}>
-      <button className="widget-rest-island" onClick={() => void setIslandOpen(true)} aria-label="Buka panel Daymark" aria-hidden={islandOpen && !islandClosing} tabIndex={islandOpen && !islandClosing ? -1 : 0}>
+      <button className="widget-rest-island" onClick={clickIsland} onPointerDown={event => void startIslandDrag(event)} onPointerMove={moveIslandDrag} onPointerUp={event => void endIslandDrag(event)} onPointerCancel={event => void endIslandDrag(event)} title="Klik untuk buka · seret ke atas/kiri/kanan layar · klik 3x untuk ke tengah" aria-label="Buka panel Daymark" aria-hidden={islandOpen && !islandClosing} tabIndex={islandOpen && !islandClosing ? -1 : 0}>
         <span className="widget-rest-face" aria-hidden="true">
           <span className="widget-rest-clock">{clock.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
           <span className="widget-rest-eyes"><i /><i /></span>
@@ -802,8 +891,8 @@ export function TodayWidget() {
           <span><Icon name="target" size={14} /> Fokus tugas</span>
           <div>
             {renderModePicker(true)}
-            <button className={`widget-pin${pinned ? " pinned" : ""}`} onClick={() => void togglePin()} aria-label={pinned ? "Lepas sematan panel" : "Sematkan panel di atas"} aria-pressed={pinned} title={pinned ? "Lepas sematan" : "Sematkan di atas"}><Icon name="pin" size={13} /><span>{pinned ? "Tersemat" : "Sematkan"}</span></button>
-            <button className={`widget-freeze${positionFrozen ? " frozen" : ""}`} onClick={() => setPositionFrozen(value => !value)} aria-label={positionFrozen ? "Buka kunci posisi panel" : "Kunci posisi panel"} aria-pressed={positionFrozen} title={positionFrozen ? "Buka kunci agar panel bisa dipindahkan" : "Kunci agar panel tidak terseret"}>{positionFrozen ? "Dikunci" : "Bebas"}</button>
+            <button className={`widget-pin${pinned ? " pinned" : ""}`} onClick={() => void togglePin()} aria-label={pinned ? "Lepas sematan panel" : "Sematkan panel di atas"} aria-pressed={pinned} title={pinned ? "Tersemat di atas · klik untuk lepas" : "Sematkan di atas jendela lain"}><Icon name="pin" size={13} /></button>
+            <button className={`widget-freeze${positionFrozen ? " frozen" : ""}`} onClick={() => setPositionFrozen(value => !value)} aria-label={positionFrozen ? "Buka kunci posisi panel" : "Kunci posisi panel"} aria-pressed={positionFrozen} title={positionFrozen ? "Buka kunci agar panel bisa dipindahkan" : "Kunci agar panel tidak terseret"}><Icon name={positionFrozen ? "lock" : "unlock"} size={14} /></button>
             <button className="widget-hide" onClick={() => void setIslandOpen(false)} aria-label={islandClosing ? "Menutup panel ke Dynamic Island" : "Tutup panel kembali ke Dynamic Island"} aria-busy={islandClosing} title="Tutup ke Dynamic Island"><Icon name="close" size={14} /></button>
           </div>
         </header>
@@ -831,8 +920,8 @@ export function TodayWidget() {
           <div className="widget-window-actions">
             <button className="widget-add-button" onClick={() => { setEditingTask(null); setEditorOpen(true); }} aria-label="Tambah tugas lengkap" title="Tambah tugas lengkap"><Icon name="plus" size={16} /></button>
             {renderAppearanceControl()}
-            <button className={`widget-pin${pinned ? " pinned" : ""}`} onClick={() => void togglePin()} aria-label={pinned ? "Lepas sematan panel" : "Sematkan panel di atas"} aria-pressed={pinned} title={pinned ? "Lepas sematan" : "Sematkan di atas"}><Icon name="pin" size={14} /><span>{pinned ? "Tersemat" : "Sematkan"}</span></button>
-            <button className={`widget-freeze${positionFrozen ? " frozen" : ""}`} onClick={() => setPositionFrozen(value => !value)} aria-label={positionFrozen ? "Buka kunci posisi panel" : "Kunci posisi panel"} aria-pressed={positionFrozen} title={positionFrozen ? "Buka kunci agar panel bisa dipindahkan" : "Kunci agar panel tidak terseret"}>{positionFrozen ? "Dikunci" : "Bebas"}</button>
+            <button className={`widget-pin${pinned ? " pinned" : ""}`} onClick={() => void togglePin()} aria-label={pinned ? "Lepas sematan panel" : "Sematkan panel di atas"} aria-pressed={pinned} title={pinned ? "Tersemat di atas · klik untuk lepas" : "Sematkan di atas jendela lain"}><Icon name="pin" size={14} /></button>
+            <button className={`widget-freeze${positionFrozen ? " frozen" : ""}`} onClick={() => setPositionFrozen(value => !value)} aria-label={positionFrozen ? "Buka kunci posisi panel" : "Kunci posisi panel"} aria-pressed={positionFrozen} title={positionFrozen ? "Buka kunci agar panel bisa dipindahkan" : "Kunci agar panel tidak terseret"}><Icon name={positionFrozen ? "lock" : "unlock"} size={14} /></button>
             <button className="widget-hide" onClick={() => void setIslandOpen(false)} aria-label={islandClosing ? "Menutup panel ke Dynamic Island" : "Tutup panel kembali ke Dynamic Island"} aria-busy={islandClosing} title="Tutup ke Dynamic Island"><Icon name="close" size={15} /></button>
           </div>
         </header>

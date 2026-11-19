@@ -611,6 +611,27 @@ fn valid_font_family(font: &str) -> bool {
     matches!(font, "plus-jakarta-sans" | "geist" | "inter" | "atkinson-hyperlegible-next" | "segoe-ui" | "aptos" | "arial")
 }
 
+/// Where the collapsed island sits: an edge (top/left/right) and the island centre along it (0..=1).
+pub fn island_dock(connection: &Connection) -> Result<(String, f64), String> {
+    let saved = setting(connection, "island_dock")?.unwrap_or_default();
+    Ok(parse_island_dock(&saved).unwrap_or_else(|| ("top".into(), 0.5)))
+}
+
+pub fn set_island_dock(connection: &Connection, edge: &str, ratio: f64) -> Result<(), String> {
+    let value = format!("{edge}:{ratio:.4}");
+    if parse_island_dock(&value).is_none() {
+        return Err("Posisi Dynamic Island tidak valid.".into());
+    }
+    upsert_setting(connection, "island_dock", &value)
+}
+
+fn parse_island_dock(value: &str) -> Option<(String, f64)> {
+    let (edge, ratio) = value.split_once(':')?;
+    let ratio: f64 = ratio.parse().ok()?;
+    (matches!(edge, "top" | "left" | "right") && (0.0..=1.0).contains(&ratio))
+        .then(|| (edge.to_owned(), ratio))
+}
+
 pub fn set_widget_transparency(connection: &Connection, percent: u8) -> Result<(), String> {
     if percent > 40 {
         return Err("Transparansi panel harus berada di antara 0 dan 40 persen.".into());
