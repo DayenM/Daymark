@@ -1,9 +1,20 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { Task } from "../types";
 import { calendarGridDays, dayKey, groupTasksByDay, shiftCalendarMonth } from "../calendar";
 import { Icon } from "./Icon";
 
 const weekdays = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+const SCALES = [.85, 1, 1.15, 1.3];
+const SCALE_KEY = "daymark.calendarScale";
+
+function savedScale() {
+  try {
+    const value = Number(localStorage.getItem(SCALE_KEY));
+    return SCALES.includes(value) ? value : 1;
+  } catch {
+    return 1;
+  }
+}
 
 function timeOf(task: Task) {
   return task.dueAt ? new Date(task.dueAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";
@@ -19,6 +30,14 @@ function byDayOrder(left: Task, right: Task) {
 export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: Task) => void }) {
   const today = dayKey(new Date());
   const [month, setMonth] = useState(() => new Date());
+  const [scale, setScale] = useState(savedScale);
+  const step = SCALES.indexOf(scale);
+
+  function changeScale(offset: number) {
+    const next = SCALES[Math.min(SCALES.length - 1, Math.max(0, step + offset))];
+    setScale(next);
+    try { localStorage.setItem(SCALE_KEY, String(next)); } catch { /* size is only a convenience */ }
+  }
   const byDay = useMemo(() => groupTasksByDay(tasks.filter(task => !task.parentId)), [tasks]);
   const days = calendarGridDays(month);
   // Drop the 6th week when it belongs entirely to the next month.
@@ -26,10 +45,16 @@ export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: 
   const monthLabel = month.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
 
   return (
-    <section className="calendar-board glass-panel">
+    <section className="calendar-board glass-panel" style={{ "--cal-scale": scale } as CSSProperties}>
       <header className="calendar-board-header">
         <h2>{monthLabel}</h2>
         <div className="calendar-board-nav">
+          <div className="calendar-zoom" role="group" aria-label="Ukuran tampilan kalender" title="Ukuran tampilan kalender: perkecil untuk melihat lebih banyak, perbesar agar tulisan lebih mudah dibaca">
+            <span className="calendar-zoom-label">Ukuran</span>
+            <button className="icon-button" onClick={() => changeScale(-1)} disabled={step === 0} aria-label="Perkecil kalender" title="Perkecil kalender">−</button>
+            <output aria-live="polite">{Math.round(scale * 100)}%</output>
+            <button className="icon-button" onClick={() => changeScale(1)} disabled={step === SCALES.length - 1} aria-label="Perbesar kalender" title="Perbesar kalender">+</button>
+          </div>
           <button className="soft-button" onClick={() => setMonth(new Date())}>Hari ini</button>
           <button className="icon-button" onClick={() => setMonth(value => shiftCalendarMonth(value, -1))} aria-label="Bulan sebelumnya"><span className="flip"><Icon name="chevron" size={16} /></span></button>
           <button className="icon-button" onClick={() => setMonth(value => shiftCalendarMonth(value, 1))} aria-label="Bulan berikutnya"><Icon name="chevron" size={16} /></button>
