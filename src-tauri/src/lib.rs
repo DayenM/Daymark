@@ -26,7 +26,8 @@ pub fn run() {
                 if args.iter().any(|argument| argument == "--quick-capture") {
                     scheduler::open_quick_capture(app);
                 } else {
-                    scheduler::show_today_widget(app);
+                    let handle = app.clone();
+                    tauri::async_runtime::spawn(async move { scheduler::open_workspace_or_panel(&handle) });
                 }
             },
         ))
@@ -40,7 +41,6 @@ pub fn run() {
             commands::open_today_widget,
             commands::reset_today_widget_position,
             commands::get_island_dock,
-            commands::launched_at_startup,
             commands::set_island_dock,
             commands::create_task,
             commands::update_task,
@@ -88,7 +88,9 @@ pub fn run() {
             if std::env::args().any(|argument| argument == "--quick-capture") {
                 scheduler::open_quick_capture(app.handle());
             } else {
-                scheduler::show_today_widget(app.handle());
+                // Window creation needs the event loop, so open the workspace off the setup thread.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move { scheduler::open_workspace_or_panel(&handle) });
             }
             scheduler::start(app.handle().clone(), state, setup_receiver);
             Ok(())

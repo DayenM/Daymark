@@ -1059,3 +1059,26 @@ button:active .daymark-icon { transform: scale(.94); }
 .main-content.is-calendar { padding: 24px 24px 16px; }
 .main-content.is-calendar .page-topline { max-width: none; margin-bottom: 16px; }
 @media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }
+
+/* ===== Calendar: add a task straight from a day ===== */
+.calendar-cell { position: relative; }
+.calendar-add { position: absolute; top: 8px; right: 7px; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line-soft); border-radius: 50%; color: var(--text-muted); background: var(--surface-content); cursor: pointer; opacity: 0; transition: opacity .15s ease, color .15s ease, border-color .15s ease; }
+.calendar-cell:hover .calendar-add, .calendar-cell.today .calendar-add, .calendar-add:focus-visible { opacity: 1; }
+.calendar-add:hover { color: var(--coral); border-color: rgb(var(--coral-rgb) / .5); }
+.calendar-add:focus-visible { outline: 2px solid var(--coral); outline-offset: 1px; }
+.calendar-add-form { display: grid; gap: 5px; padding: 6px; border: 1px solid rgb(var(--coral-rgb) / .5); border-radius: 8px; background: var(--surface-content); }
+.calendar-add-form input { min-width: 0; border: 0; outline: 0; color: var(--text-primary); background: transparent; font: inherit; font-size: calc(11.5px * var(--cal-scale)); }
+.calendar-add-form > div { display: flex; align-items: center; gap: 4px; }
+.calendar-add-form input[type=time] { flex: 1; color: var(--text-muted); font-size: calc(10.5px * var(--cal-scale)); color-scheme: inherit; }
+.calendar-add-form button { width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font: inherit; }
+.calendar-add-cancel { color: var(--text-muted); background: transparent; font-size: 15px; }
+.calendar-add-save { color: var(--primary-action-ink); background: var(--primary-action-bg); }
+.calendar-add-save:disabled { opacity: .4; cursor: default; }
+
+/* ===== Closing the workspace: it is pulled back into the Dynamic Island ===== */
+.window-frame.is-folding-into-island { transform-origin: var(--island-origin, 50% 0); animation: daymark-fold-into-island .38s cubic-bezier(.55, 0, .8, .25) forwards; pointer-events: none; }
+@keyframes daymark-fold-into-island {
+  0% { transform: none; opacity: 1; border-radius: 0; }
+  55% { opacity: .95; border-radius: 28px; }
+  100% { transform: scale(.04, .03); opacity: 0; border-radius: 60px; }
+}

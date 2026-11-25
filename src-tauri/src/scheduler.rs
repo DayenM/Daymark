@@ -110,8 +110,22 @@ fn present_daily_briefing(app: &AppHandle, connection: &Arc<Mutex<Connection>>) 
     if !should_present {
         return;
     }
-    show_today_widget(app);
+    let workspace_open = app
+        .get_webview_window("main")
+        .and_then(|window| window.is_visible().ok())
+        .unwrap_or(false);
+    if !workspace_open {
+        show_today_widget(app);
+    }
     let _ = app.emit("briefing-needed", ());
+}
+
+/// Launching Daymark (by hand or at sign-in) opens the full workspace; the panel is the fallback.
+pub fn open_workspace_or_panel(app: &AppHandle) {
+    if let Err(error) = show_main(app) {
+        eprintln!("Workspace could not open: {error}");
+        show_today_widget(app);
+    }
 }
 
 pub fn show_main(app: &AppHandle) -> Result<(), String> {
@@ -134,8 +148,9 @@ pub fn show_main(app: &AppHandle) -> Result<(), String> {
                     .and_then(|builder| builder.build())
                     .map_err(|error| format!("Jendela Daymark gagal dibuat: {error}"))?;
                 let app_handle = app.clone();
+                // The page animates itself into the island before destroying the window.
                 window.on_window_event(move |event| {
-                    if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+                    if matches!(event, tauri::WindowEvent::Destroyed) {
                         show_today_widget(&app_handle);
                     }
                 });

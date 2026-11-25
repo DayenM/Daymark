@@ -36,11 +36,6 @@ pub fn reset_today_widget_position(app: AppHandle, state: State<'_, DbState>) ->
 }
 
 #[tauri::command]
-pub fn launched_at_startup() -> bool {
-    std::env::args().any(|argument| argument == "--startup")
-}
-
-#[tauri::command]
 pub fn get_island_dock(state: State<'_, DbState>) -> Result<(String, f64), String> {
     with_connection(&state, |connection| db::island_dock(connection))
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import type { Task } from "../types";
 import { calendarGridDays, dayKey, groupTasksByDay, shiftCalendarMonth } from "../calendar";
 import { Icon } from "./Icon";
@@ -32,10 +32,32 @@ function byDayOrder(left: Task, right: Task) {
 }
 
 // Read-at-a-glance month board: every task of every day is visible without clicking.
-export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: Task) => void }) {
+export function CalendarPage({ tasks, onEdit, onCreate }: { tasks: Task[]; onEdit: (task: Task) => void; onCreate: (title: string, due: string) => Promise<void> }) {
   const today = dayKey(new Date());
   const [month, setMonth] = useState(() => new Date());
   const [scale, setScale] = useState(savedScale);
+  const [addingDay, setAddingDay] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftTime, setDraftTime] = useState("09:00");
+  const [saving, setSaving] = useState(false);
+
+  function startAdding(key: string) {
+    setAddingDay(key);
+    setDraftTitle("");
+    setDraftTime("09:00");
+  }
+
+  async function submitDraft(event: FormEvent, key: string) {
+    event.preventDefault();
+    if (!draftTitle.trim() || saving) return;
+    setSaving(true);
+    try {
+      await onCreate(draftTitle.trim(), `${key}T${draftTime || "09:00"}`);
+      setAddingDay(null);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function changeScale(value: number) {
     const next = clampScale(value);
@@ -74,6 +96,7 @@ export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: 
           return (
             <div key={key} className={classes} aria-label={day.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}>
               <span className="calendar-cell-date">{day.getDate()}</span>
+              {addingDay !== key && <button className="calendar-add" onClick={() => startAdding(key)} aria-label={`Tambah tugas ${day.toLocaleDateString("id-ID", { day: "numeric", month: "long" })}`} title="Tambah tugas di tanggal ini"><Icon name="plus" size={13} /></button>}
               {dayTasks.map(task => {
                 const late = key < today && task.status === "open";
                 return (
@@ -83,6 +106,16 @@ export function CalendarPage({ tasks, onEdit }: { tasks: Task[]; onEdit: (task: 
                   </button>
                 );
               })}
+              {addingDay === key && (
+                <form className="calendar-add-form" onSubmit={event => void submitDraft(event, key)} onKeyDown={event => { if (event.key === "Escape") setAddingDay(null); }}>
+                  <input autoFocus value={draftTitle} onChange={event => setDraftTitle(event.target.value)} placeholder="Tugas baru…" maxLength={240} aria-label="Judul tugas baru" />
+                  <div>
+                    <input type="time" value={draftTime} onChange={event => setDraftTime(event.target.value)} aria-label="Jam tugas" />
+                    <button type="button" className="calendar-add-cancel" onClick={() => setAddingDay(null)} aria-label="Batal">×</button>
+                    <button className="calendar-add-save" disabled={!draftTitle.trim() || saving} aria-label="Simpan tugas"><Icon name="check" size={13} /></button>
+                  </div>
+                </form>
+              )}
             </div>
           );
         })}

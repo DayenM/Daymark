@@ -165,9 +165,7 @@ export function TodayWidget() {
       };
     }
     void refresh();
-    // After Windows sign-in, greet the user with the calendar already open.
-    void invoke<[DockEdge, number]>("get_island_dock").then(([edge]) => applyDockEdge(edge)).catch(() => undefined)
-      .then(() => invoke<boolean>("launched_at_startup")).then(atStartup => { if (atStartup) void setIslandOpen(true); }).catch(() => undefined);
+    void invoke<[DockEdge, number]>("get_island_dock").then(([edge]) => applyDockEdge(edge)).catch(() => undefined);
     void panelWindow?.isAlwaysOnTop().then(setPinned).catch(() => setPinned(true));
     let unlisten: (() => void)[] = [];
     let active = true;

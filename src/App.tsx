@@ -93,6 +93,7 @@ function WorkspaceApp() {
   const [notice, setNotice] = useState("");
   const [view, setView] = useState<ViewKey>("calendar");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const frameRef = useRef<HTMLDivElement>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
@@ -149,10 +150,8 @@ function WorkspaceApp() {
     void Promise.all([
       // Window-scoped: the hotkey targets only the window the user is looking at.
       getCurrentWindow().listen("quick-capture", () => setQuickCaptureOpen(true)),
-      listen("briefing-needed", () => {
-        openView("briefing");
-        void refresh().catch(value => setError(errorMessage(value)));
-      }),
+      // Stay on the calendar; the Briefing nav item shows a dot instead of stealing the view.
+      listen("briefing-needed", () => void refresh().catch(value => setError(errorMessage(value)))),
       listen("workspace-mutated", () => {
         void refresh(false).catch(value => setError(errorMessage(value)));
       }),
@@ -388,6 +387,32 @@ function WorkspaceApp() {
         : view === "projects" ? topLevel(openTasks.filter(task => task.projectId === projectFilter))
           : [];
 
+  useEffect(() => {
+    const appWindow = getCurrentWindow();
+    let closing = false;
+    const stop = appWindow.onCloseRequested(async event => {
+      event.preventDefault();
+      if (closing) return;
+      closing = true;
+      await foldIntoIsland();
+      await appWindow.destroy();
+    });
+    return () => { void stop.then(unlisten => unlisten()); };
+  }, []);
+
+  // Shrink the workspace toward the island's spot on screen, like it is pulled back into the panel.
+  async function foldIntoIsland() {
+    const frame = frameRef.current;
+    if (!frame || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const [edge, ratio] = await invoke<[string, number]>("get_island_dock").catch(() => ["top", .5] as [string, number]);
+    const { width, height } = window.screen;
+    const islandX = edge === "left" ? 0 : edge === "right" ? width : width * ratio;
+    const islandY = edge === "top" ? 0 : height * ratio;
+    frame.style.setProperty("--island-origin", `${islandX - window.screenX}px ${islandY - window.screenY}px`);
+    frame.classList.add("is-folding-into-island");
+    await new Promise(resolve => window.setTimeout(resolve, 380));
+  }
+
   function openView(next: ViewKey) {
     setView(next);
     // The calendar gets the full width; other pages bring the sidebar back.
@@ -395,7 +420,7 @@ function WorkspaceApp() {
   }
 
   return (
-    <div className="window-frame">
+    <div className="window-frame" ref={frameRef}>
       <header className="titlebar" data-tauri-drag-region>
         <div className="brand-lockup" data-tauri-drag-region>
           <button className="sidebar-toggle" onClick={() => setSidebarCollapsed(value => !value)} aria-expanded={!sidebarCollapsed} aria-controls="app-sidebar" aria-label={sidebarCollapsed ? "Buka sidebar" : "Tutup sidebar"} title={sidebarCollapsed ? "Buka sidebar" : "Tutup sidebar"}><Icon name="menu" size={17} /></button>
@@ -505,7 +530,7 @@ function WorkspaceApp() {
 
           {view === "projects" && snapshot.projects.length === 0 && <section className="empty-project glass-panel"><span className="empty-icon"><Icon name="folder" size={24} /></span><h2>Mulai dari satu project.</h2><p>Kelompokkan tugas yang berjalan bersama.</p><button className="primary-button" onClick={() => setProjectEditorOpen(true)}><Icon name="plus" size={15} /> Buat project</button></section>}
 
-          {view === "calendar" && <CalendarPage tasks={tasks} onEdit={setEditingTask} />}
+          {view === "calendar" && <CalendarPage tasks={tasks} onEdit={setEditingTask} onCreate={(title, due) => createTask(title, due)} />}
 
           {view === "notes" && <NotesPage notes={snapshot.quickNotes} onCreate={createQuickNote} onUpdate={updateQuickNote} onDelete={deleteQuickNote} />}
 
