@@ -375,18 +375,7 @@ function WorkspaceApp() {
     await perform(() => invoke("delete_quick_note", { id: note.id }));
   }
 
-  if (loading) return <div className="startup-state"><span className="brand-mark"><Icon name="sun" /></span><p>Menyiapkan ruang harian…</p></div>;
-  if (!snapshot) return <div className="startup-state"><span className="brand-mark"><Icon name="sun" /></span><h1>Daymark belum dapat dibuka</h1><p>{error || "Database lokal tidak merespons."}</p><button className="primary-button" onClick={() => { setLoading(true); void refresh().catch(value => { setError(errorMessage(value)); setLoading(false); }); }}>Coba lagi</button></div>;
-
-  const currentProject = snapshot.projects.find(project => project.id === projectFilter);
-  const pageTitle = view === "projects" && currentProject ? currentProject.name : ({ calendar: "Kalender", briefing: "Morning Briefing", today: "Hari ini", upcoming: "Mendatang", inbox: "Inbox", projects: "Projects", notes: "Catatan", settings: "Pengaturan" } satisfies Record<ViewKey, string>)[view];
-  const pageIcon = view === "settings" ? "settings" : navigation.find(item => item.key === view)?.icon ?? "folder";
-  const rootTasks = view === "today" ? topLevel([...overdueTasks, ...todayTasks, ...unscheduledTasks])
-    : view === "upcoming" ? topLevel(upcomingTasks)
-      : view === "inbox" ? topLevel(unscheduledTasks)
-        : view === "projects" ? topLevel(openTasks.filter(task => task.projectId === projectFilter))
-          : [];
-
+  // Must stay above the early returns: a hook below them crashes the whole workspace.
   useEffect(() => {
     const appWindow = getCurrentWindow();
     let closing = false;
@@ -399,6 +388,18 @@ function WorkspaceApp() {
     });
     return () => { void stop.then(unlisten => unlisten()); };
   }, []);
+
+  if (loading) return <div className="startup-state"><span className="brand-mark"><Icon name="sun" /></span><p>Menyiapkan ruang harian…</p></div>;
+  if (!snapshot) return <div className="startup-state"><span className="brand-mark"><Icon name="sun" /></span><h1>Daymark belum dapat dibuka</h1><p>{error || "Database lokal tidak merespons."}</p><button className="primary-button" onClick={() => { setLoading(true); void refresh().catch(value => { setError(errorMessage(value)); setLoading(false); }); }}>Coba lagi</button></div>;
+
+  const currentProject = snapshot.projects.find(project => project.id === projectFilter);
+  const pageTitle = view === "projects" && currentProject ? currentProject.name : ({ calendar: "Kalender", briefing: "Morning Briefing", today: "Hari ini", upcoming: "Mendatang", inbox: "Inbox", projects: "Projects", notes: "Catatan", settings: "Pengaturan" } satisfies Record<ViewKey, string>)[view];
+  const pageIcon = view === "settings" ? "settings" : navigation.find(item => item.key === view)?.icon ?? "folder";
+  const rootTasks = view === "today" ? topLevel([...overdueTasks, ...todayTasks, ...unscheduledTasks])
+    : view === "upcoming" ? topLevel(upcomingTasks)
+      : view === "inbox" ? topLevel(unscheduledTasks)
+        : view === "projects" ? topLevel(openTasks.filter(task => task.projectId === projectFilter))
+          : [];
 
   // Shrink the workspace toward the island's spot on screen, like it is pulled back into the panel.
   async function foldIntoIsland() {
