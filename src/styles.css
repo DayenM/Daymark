@@ -1083,3 +1083,11 @@ button:active .daymark-icon { transform: scale(.94); }
   55% { opacity: .95; border-radius: 28px; }
   100% { transform: scale(.04, .03); opacity: 0; border-radius: 60px; }
 }
+
+/* ===== Panel theme popover: spans the panel itself, so it can never spill past an edge ===== */
+.today-widget-window .widget-appearance-control { position: static; }
+.today-widget-window .widget-appearance-popover { top: 52px; right: 10px; left: 10px; width: auto; max-height: calc(100% - 62px); overflow-y: auto; transform: none; }
+.today-widget-window .appearance-picker-compact .theme-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.today-widget-window .appearance-picker-compact .theme-option { min-width: 0; min-height: 82px; padding: 6px; }
+.today-widget-window .appearance-picker-compact .theme-option strong { margin-top: 6px; line-height: 1.25; }
+.today-widget-window .appearance-picker-compact .theme-preview-icon { display: none; }
