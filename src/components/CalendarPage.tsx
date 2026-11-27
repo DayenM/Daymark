@@ -32,7 +32,7 @@ function byDayOrder(left: Task, right: Task) {
 }
 
 // Read-at-a-glance month board: every task of every day is visible without clicking.
-export function CalendarPage({ tasks, onEdit, onCreate }: { tasks: Task[]; onEdit: (task: Task) => void; onCreate: (title: string, due: string) => Promise<void> }) {
+export function CalendarPage({ tasks, onToggle, onEdit, onCreate }: { tasks: Task[]; onToggle: (task: Task) => void; onEdit: (task: Task) => void; onCreate: (title: string, due: string) => Promise<void> }) {
   const today = dayKey(new Date());
   const [month, setMonth] = useState(() => new Date());
   const [scale, setScale] = useState(savedScale);
@@ -100,10 +100,15 @@ export function CalendarPage({ tasks, onEdit, onCreate }: { tasks: Task[]; onEdi
               {dayTasks.map(task => {
                 const late = key < today && task.status === "open";
                 return (
-                  <button key={task.id} className={`calendar-task priority-${task.priority}${task.status === "done" ? " done" : ""}${late ? " late" : ""}`} onClick={() => onEdit(task)} title={`${timeOf(task)} · ${task.title}`}>
-                    <time>{timeOf(task)}</time>
-                    <span>{task.title}</span>
-                  </button>
+                  <div key={task.id} className={`calendar-task priority-${task.priority}${task.status === "done" ? " done" : ""}${late ? " late" : ""}`}>
+                    <button className={`task-check${task.status === "done" ? " checked" : ""}`} onClick={() => onToggle(task)} aria-pressed={task.status === "done"} aria-label={`${task.status === "done" ? "Tandai belum selesai" : "Selesaikan"}: ${task.title}`} title={task.status === "done" ? "Tandai belum selesai" : "Tandai selesai"}>
+                      {task.status === "done" && <Icon name="check" size={11} />}
+                    </button>
+                    <button className="calendar-task-body" onClick={() => onEdit(task)} title={`${timeOf(task)} · ${task.title}`}>
+                      <time>{timeOf(task)}</time>
+                      <span>{task.title}</span>
+                    </button>
+                  </div>
                 );
               })}
               {addingDay === key && (
